@@ -56,8 +56,10 @@ exports.run = function(req, res) {
     metrics.startTime = startTime.getTime()/1000;
     var step = startTime;
     var request;
+    var timedout = false;
 
     var timeoutId = setTimeout(function() {
+        timedout = true;
         var endTime = new Date();
         if (request) {
             request.abort();
@@ -100,10 +102,12 @@ exports.run = function(req, res) {
             });
         });
         request.on('error', function(e) {
-            console.log('HTTP: error event emitted.');
-            console.log(e);
-            metrics.error = e.message;
-            return respond(res, metrics);
+            if (! timedout) {
+                console.log('HTTP: error event emitted.');
+                console.log(e);
+                metrics.error = e.message;
+                return respond(res, metrics);
+            }
         });
         request.on('finish', function() {
             var requestEndTime = new Date();

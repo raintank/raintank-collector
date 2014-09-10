@@ -6,7 +6,6 @@ var util = require('util');
 var params = ['server', 'protocol', 'port', 'type','timeout','name', 'regexp'];
 */
 exports.run = function(req, res) {
-    console.log(req.body);
     var question = dns.Question({
         name: req.body.name,
         type: req.body.type,
