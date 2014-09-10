@@ -103,6 +103,7 @@ exports.run = function(req, res) {
         });
         request.on('error', function(e) {
             if (! timedout) {
+                clearTimeout(timeoutId);
                 console.log('HTTP: error event emitted.');
                 console.log(e);
                 metrics.error = e.message;
