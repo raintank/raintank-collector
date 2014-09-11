@@ -44,17 +44,19 @@ exports.run = function(req, res) {
             profile.ttl = answer.answer[0].ttl;
         }
         profile.answers = answer.answer.length;
-        var regexMatch = false;
-        var regex = new RegExp(req.body.regexp);
-        answer.answer.forEach(function(resp) {
-            var respText = toString(req.body.type, resp);
-            if (regex.test(respText)) {
-                regexMatch = true;
-            } 
-        });
-        if (!(regexMatch)) {
-            profile.error = 'Regular Expression not matched for any answer.';
-        };
+        if (req.body.regexp && req.body.regexp.length > 0) {
+            var regexMatch = false;
+            var regex = new RegExp(req.body.regexp);
+            answer.answer.forEach(function(resp) {
+                var respText = toString(req.body.type, resp);
+                if (regex.test(respText)) {
+                    regexMatch = true;
+                } 
+            });
+            if (!(regexMatch)) {
+                profile.error = 'Regular Expression not matched for any answer.';
+            };
+        }
         respond(res, profile);
     });
     dnsReq.send()
