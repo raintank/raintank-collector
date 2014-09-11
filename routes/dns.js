@@ -23,6 +23,7 @@ exports.run = function(req, res) {
     };
 
     var startTime = new Date();
+    profile.startTime = startTime.getTime()/1000;
     var step = startTime;
     var dnsReq = dns.Request({question: question, server: server, timeout: (req.body.timeout * 1000), cache: false});
     
