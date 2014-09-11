@@ -60,14 +60,26 @@ exports.run = function(req, res) {
 
 }
 
-function respond(res, profile) {
-    var metrics = ['time'];
-    metrics.forEach(function(m) {
-        if (!isNaN(profile[m]) && profile[m] > 0 ) {
-            profile[m] = profile[m]/1000;
+function respond(res, metrics) {
+    var payload = [{
+        plugin: "dns",
+        type: "response",
+        dsnames: [],
+        dstypes: [],
+        values: [],
+    }];
+    var valid_metrics = ['time','ttl','answers'];
+    valid_metrics.forEach(function(m) {
+        if (!isNaN(metrics[m]) && metrics[m] >= 0 ) {
+            metrics[m] = metrics[m];
         }
+        payload[0].dsnames.push(m);
+        payload[0].dstypes.push('gauge');
+        payload[0].values.push(metrics[m]);
+        payload[0].time = metrics.startTime;
     });
-    res.json({success: true, results: profile});
+
+    res.json({success: true, results: payload, error: metrics.error});
 }
 
 function toString(type, answer) {
