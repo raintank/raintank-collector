@@ -2,6 +2,11 @@
 var dns = require('native-dns');
 var util = require('util');
 
+function timeDiff(t1, t2) {
+    //convert to milliseconds.
+    return ((t1[0] - t2[0]) * 1e3) + ((t1[1] - t2[1])/1e6);
+}
+
 /*
 var params = ['server', 'protocol', 'port', 'type','timeout','name', 'regexp'];
 */
@@ -22,8 +27,8 @@ exports.run = function(req, res) {
         answers: null,
     };
 
-    var startTime = new Date();
-    profile.startTime = startTime.getTime()/1000;
+    var startTime = process.hrtime();
+    profile.startTime = new Date().getTime()/1000;
     var step = startTime;
     var dnsReq = dns.Request({question: question, server: server, timeout: (req.body.timeout * 1000), cache: false});
     
@@ -38,8 +43,8 @@ exports.run = function(req, res) {
             profile.error = "dns lookup failure.";
             return respond(res, profile);
         }
-        var dnsTime = new Date();
-        profile.time = dnsTime.getTime() - step.getTime();
+        var dnsTime = process.hrtime();
+        profile.time = timeDiff(dnsTime, step);
         if (answer.answer.length > 0) {
             profile.ttl = answer.answer[0].ttl;
         }

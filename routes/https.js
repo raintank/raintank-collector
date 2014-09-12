@@ -17,6 +17,10 @@ function expandHeaders(headersTxt) {
     return headers;
 }
 
+function timeDiff(t1, t2) {
+    //convert to milliseconds.
+    return ((t1[0] - t2[0]) * 1e3) + ((t1[1] - t2[1])/1e6);
+}
 
 /*
 var params = ['hostname','port','timeout','path','headers','auth','expectRegex','method','post', 'validateCert'];
@@ -50,58 +54,78 @@ exports.run = function(req, res) {
         send: null,
         wait: null,
         recv: null,
+        total: 0,
         statusCode: null,
         dataLength: null,
         error: null,
     };
 
-    var startTime = new Date();
-    metrics.startTime = startTime.getTime()/1000;
+    var startTime = process.hrtime();
+    metrics.startTime = new Date().getTime()/1000;
     var step = startTime;
+    var request;
+    var timedout = false;
+
+    var timeoutId = setTimeout(function() {
+        timedout = true;
+        var endTime = process.hrtime();
+        if (request) {
+            request.abort();
+        }
+        metrics.error = "timed out after " + req.body.timeout + " seconds.";
+        metrics.total += timeDiff(endTime, step);
+        return respond(res, metrics);
+    }, req.body.timeout * 1000);
+
     dns.lookup(hostname, 4, function(err, address, family) {
+        var dnsTime = process.hrtime();
         if (err) {
+            clearTimeout(timeoutId);
+            if (timedout) return;
             console.log(err);
             metrics.error = "dns lookup failure.";
             return respond(res, metrics);
         }
-        var dnsTime = new Date();
-        metrics.dns = dnsTime.getTime() - step.getTime();
+        metrics.dns = timeDiff(dnsTime, step);
+        metrics.total += metrics.dns;
         opts.host = address;
 
         step = dnsTime;
         var request = https.request(opts);
-
-        var timeoutId = setTimeout(function() {
-            request.abort();
-            metrics.error = "timed out after " + req.body.timeout + " seconds.";
-            return respond(res, metrics);    
-        }, req.body.timeout * 1000);
         request.on('socket', function(socket) {
             socket.on('secureConnect', function() {
-                var socketConnectTime = new Date();
-                metrics.connect = socketConnectTime.getTime() -  step.getTime();
+                var socketConnectTime = process.hrtime();
+                metrics.connect = timeDiff(socketConnectTime, step);
+                metrics.total += metrics.connect;
                 step = socketConnectTime;
-                //SEND DATA HERE
-                // request.write();
+                if (req.body.method == "POST" && req.body.post) {
+                    request.write(req.body.post);
+                }
                 request.end();
             });
 
         });
         request.on('error', function(e) {
+            var requestEndTime = process.hrtime();
+            clearTimeout(timeoutId);
+            if (timedout) return;
+            metrics.send = timeDiff(requestEndTime, step);
+            metrics.total += metrics.send;
+            console.log('HTTP: error event emitted.');
             console.log(e);
             metrics.error = e.message;
             return respond(res, metrics);
         });
         request.on('finish', function() {
-            var requestEndTime = new Date();
-            metrics.send = requestEndTime.getTime() - step.getTime();
+            var requestEndTime = process.hrtime();
+            metrics.send = timeDiff(requestEndTime, step);
+            metrics.total += metrics.send;
             step = requestEndTime;
         });
         request.on('response', function(response) {
-            var responseTime = new Date();
-
-            metrics.wait = responseTime.getTime() -  step.getTime();
-            step = responseTime;
+            var responseTime = process.hrtime();
+            metrics.wait = timeDiff(responseTime, step);
+            metrics.total += metrics.wait;
             var rawResp = [];
             var dataLength = 0;
             response.on('data', function(data) {
@@ -113,10 +137,11 @@ exports.run = function(req, res) {
                 }
             });
             response.on('end', function() {
-                var endTime = new Date();
+                var endTime = process.hrtime();
                 clearTimeout(timeoutId);
-                metrics.recv = endTime.getTime() - step.getTime();
-                metrics.total = endTime.getTime() - startTime.getTime();
+                if (timedout) return;
+                metrics.recv = timeDiff(endTime, step);
+                metrics.total += metrics.recv;
                 metrics.dataLength = dataLength;
                 metrics.statusCode = response.statusCode;
                 if (expectRegex) {
