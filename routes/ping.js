@@ -32,7 +32,6 @@ exports.run = function(req, res) {
         var pings = [];
 		for (var i = 0; i < COUNT; i++) {
 			pings.push(function(cb) {
-				console.log('pinging: ' + address + " count "+ i);
 			    session.pingHost (address, function (error, target, sent, rcvd) {
 			        if (! error) {
 			            cb(null, {ms: (rcvd - sent)}); 
@@ -45,8 +44,6 @@ exports.run = function(req, res) {
 		async.series(pings, function(error, results) {
 			session.close();
 			if (error) return res.json(500, error);
-
-			console.log(results);
 			var failCount = 0;
 			var totalCount = results.length;
 			var tsum = 0;
