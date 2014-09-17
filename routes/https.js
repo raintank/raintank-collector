@@ -6,14 +6,16 @@ var zlib = require('zlib');
 function expandHeaders(headersTxt) {
     var headers = {};
 
-    headersTxt.split("\n").forEach(function(headerStr) {
-        var parts = headerStr.split(":");
-        var headerName = parts[0].trim().toLowerCase();
-        var headerContent = parts.slice(1).join(':').trim();
-        if (headerName.length > 0) {
-        	headers[headerName] = headerContent;
-        }
-    })
+    if (headersTxt && headersTxt.length > 0) {
+        headersTxt.split("\n").forEach(function(headerStr) {
+            var parts = headerStr.split(":");
+            var headerName = parts[0].trim().toLowerCase();
+            var headerContent = parts.slice(1).join(':').trim();
+            if (headerName.length > 0) {
+                headers[headerName] = headerContent;
+            }
+        });
+    }
     return headers;
 }
 
