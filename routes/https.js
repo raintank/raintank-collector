@@ -147,46 +147,77 @@ exports.run = function(req, res) {
                 metrics.dataLength = dataLength;
                 metrics.statusCode = response.statusCode;
                 if (expectRegex) {
-                    var buffer = Buffer.concat(rawResp);
-                    zlib.gunzip(buffer, function(err, decoded) {
-                      if (err) {
-                        console.log("could not decode response data.");
-                        console.log(err)
-                      } else {
+                    if ('content-encoding' in response.headers && response.headers['content-encoding'] == 'gzip') {
+                        //handle gziped data.
+                        var buffer = Buffer.concat(rawResp);
+                        zlib.gunzip(buffer, function(err, decoded) {
+                          if (err) {
+                            console.log("could not decode response data.");
+                            console.log(err)
+                          } else {
+                            var rexp = new RegExp(expectRegex, 'g');
+                            if (!(rexp.test(decoded))) {
+                                console.log("expectRegex did not match.");
+                                metrics.error = "expectRegex did not match.";
+                            }
+                          }
+                          respond(res, metrics);
+                        });
+                    } else {
                         var rexp = new RegExp(expectRegex, 'g');
-                        if (!(rexp.test(decoded))) {
+                        if (!(rexp.test(rawResp))) {
                             console.log("expectRegex did not match.");
                             metrics.error = "expectRegex did not match.";
                         }
-                      }
-                      respond(res, metrics);
-                    });
+                        respond(res, metrics);
+                    }
                 } else {
                     return respond(res, metrics);
                 }
             });
         });
     });
+}
+
+function checkRegex(regex, data, cb) {
 
 }
 
 function respond(res, metrics) {
     var payload = [{
-        plugin: "http",
-        type: "response",
+        plugin: "https",
+        unit: "ms",
         dsnames: [],
-        dstypes: [],
+        target_type: "gauge",
         values: [],
+        time: metrics.startTime
+    },{
+        plugin: "https",
+        unit: "bypes",
+        dsnames: [],
+        target_type: "gauge",
+        values: [],
+        time: metrics.startTime
+    },
+    {
+        plugin: "https",
+        unit: "code",
+        dsnames: [],
+        target_type: "gauge",
+        values: [],
+        time: metrics.startTime
     }];
-    var valid_metrics = ['dns','connect','send','wait','recv', 'total', 'dataLength', 'statusCode'];
-    valid_metrics.forEach(function(m) {
+    ['dns','connect','send','wait','recv', 'total'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
             metrics[m] = metrics[m];
         }
         payload[0].dsnames.push(m);
-        payload[0].dstypes.push('gauge');
         payload[0].values.push(metrics[m]);
-        payload[0].time = metrics.startTime;
     });
+    payload[1].dsnames.push('dataLength');
+    payload[1].values.push(metrics['dataLength']);
+    payload[1].dsnames.push('statusCode');
+    payload[1].values.push(metrics['statusCode']);
+
     res.json({success: true, results: payload, error: metrics.error});
 }

@@ -42,6 +42,7 @@ exports.run = function(req, res) {
 		    });
 		}
 		async.series(pings, function(error, results) {
+			console.log(results);
 			session.close();
 			if (error) return res.json(500, error);
 			var failCount = 0;
@@ -84,18 +85,26 @@ exports.run = function(req, res) {
 function respond(res, metrics) {
     var payload = [{
         plugin: "ping",
-        type: "response",
+        unit: "ms",
         dsnames: [],
-        dstypes: [],
+        target_type: "gauge",
         values: [],
+        time: metrics.startTime
+    },
+    {
+        plugin: "ping",
+        unit: "%",
+        dsnames: [],
+        target_type: "gauge",
+        values: [],
+        time: metrics.startTime
     }];
     var valid_metrics = ['dns','loss','min','max','avg', 'mdev'];
-    valid_metrics.forEach(function(m) {
+    ['dns','min','max','avg', 'mdev'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
             metrics[m] = metrics[m];
         }
         payload[0].dsnames.push(m);
-        payload[0].dstypes.push('gauge');
         payload[0].values.push(metrics[m]);
         payload[0].time = metrics.startTime;
     });

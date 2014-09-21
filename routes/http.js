@@ -178,21 +178,38 @@ exports.run = function(req, res) {
 function respond(res, metrics) {
     var payload = [{
         plugin: "http",
-        type: "response",
+        type: "ms",
         dsnames: [],
-        dstypes: [],
+        target_type: "gauge",
         values: [],
+        time: metrics.startTime
+    },{
+        plugin: "http",
+        type: "bytes",
+        dsnames: [],
+        target_type: "gauge",
+        values: [],
+        time: metrics.startTime
+    },
+    {
+        plugin: "http",
+        type: "code",
+        dsnames: [],
+        target_type: "gauge",
+        values: [],
+        time: metrics.startTime
     }];
-    var valid_metrics = ['dns','connect','send','wait','recv', 'total', 'dataLength', 'statusCode'];
-    valid_metrics.forEach(function(m) {
+    ['dns','connect','send','wait','recv', 'total'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
             metrics[m] = metrics[m];
         }
         payload[0].dsnames.push(m);
-        payload[0].dstypes.push('gauge');
         payload[0].values.push(metrics[m]);
-        payload[0].time = metrics.startTime;
     });
+    payload[1].dsnames.push('dataLength');
+    payload[1].values.push(metrics['dataLength']);
+    payload[1].dsnames.push('statusCode');
+    payload[1].values.push(metrics['statusCode']);
 
     res.json({success: true, results: payload, error: metrics.error});
 }
