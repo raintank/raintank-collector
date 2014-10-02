@@ -32,7 +32,7 @@ exports.run = function(req, res) {
         var pings = [];
 		for (var i = 0; i < COUNT; i++) {
 			pings.push(function(cb) {
-			    session.pingHost (address, function (error, target, sent, rcvd) {
+			    session.pingHost(address, function (error, target, sent, rcvd) {
 			        if (! error) {
 			            cb(null, {ms: (rcvd - sent)}); 
 			        } else {
@@ -96,13 +96,12 @@ function respond(res, metrics) {
         unit: "%",
         dsnames: [],
         target_type: "gauge",
-        values: [],
+        values: [Math.round(metrics.loss * 100) / 100],
         time: metrics.startTime
     }];
-    var valid_metrics = ['dns','loss','min','max','avg', 'mdev'];
     ['dns','min','max','avg', 'mdev'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
-            metrics[m] = metrics[m];
+            metrics[m] = metrics[m] = Math.round(metrics[m] * 100) / 100;
         }
         payload[0].dsnames.push(m);
         payload[0].values.push(metrics[m]);

@@ -179,10 +179,6 @@ exports.run = function(req, res) {
     });
 }
 
-function checkRegex(regex, data, cb) {
-
-}
-
 function respond(res, metrics) {
     var payload = [{
         plugin: "https",
@@ -209,12 +205,15 @@ function respond(res, metrics) {
     }];
     ['dns','connect','send','wait','recv', 'total'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
-            metrics[m] = metrics[m];
+            metrics[m] = Math.round(metrics[m] * 100) / 100;
         }
         payload[0].dsnames.push(m);
         payload[0].values.push(metrics[m]);
     });
     payload[1].dsnames.push('dataLength');
+    if (!isNaN(metrics['dataLength']) && metrics['dataLength'] > 0 ) {
+        metrics['dataLength'] = Math.round(metrics['dataLength'] * 100) / 100;
+    }
     payload[1].values.push(metrics['dataLength']);
     payload[1].dsnames.push('statusCode');
     payload[1].values.push(metrics['statusCode']);

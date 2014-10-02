@@ -74,7 +74,7 @@ function respond(res, metrics) {
         unit: "ms",
         dsnames: ["time"],
         target_type: "gauge",
-        values: [metrics.time],
+        values: [Math.round(metrics.time * 100) / 100],
         time: metrics.startTime,
     },
     {

@@ -151,20 +151,30 @@ exports.run = function(req, res) {
                 metrics.dataLength = dataLength;
                 metrics.statusCode = response.statusCode;
                 if (expectRegex) {
-                    var buffer = Buffer.concat(rawResp);
-                    zlib.gunzip(buffer, function(err, decoded) {
-                      if (err) {
-                        console.log("could not decode response data.");
-                        console.log(err)
-                      } else {
+                    if ('content-encoding' in response.headers && response.headers['content-encoding'] == 'gzip') {
+                        //handle gziped data.
+                        var buffer = Buffer.concat(rawResp);
+                        zlib.gunzip(buffer, function(err, decoded) {
+                          if (err) {
+                            console.log("could not decode response data.");
+                            console.log(err)
+                          } else {
+                            var rexp = new RegExp(expectRegex, 'g');
+                            if (!(rexp.test(decoded))) {
+                                console.log("expectRegex did not match.");
+                                metrics.error = "expectRegex did not match.";
+                            }
+                          }
+                          respond(res, metrics);
+                        });
+                    } else {
                         var rexp = new RegExp(expectRegex, 'g');
-                        if (!(rexp.test(decoded))) {
+                        if (!(rexp.test(rawResp))) {
                             console.log("expectRegex did not match.");
                             metrics.error = "expectRegex did not match.";
                         }
-                      }
-                      respond(res, metrics);
-                    });
+                        respond(res, metrics);
+                    }
                 } else {
                     return respond(res, metrics);
                 }
@@ -178,14 +188,14 @@ exports.run = function(req, res) {
 function respond(res, metrics) {
     var payload = [{
         plugin: "http",
-        type: "ms",
+        unit: "ms",
         dsnames: [],
         target_type: "gauge",
         values: [],
         time: metrics.startTime
     },{
         plugin: "http",
-        type: "bytes",
+        unit: "bytes",
         dsnames: [],
         target_type: "gauge",
         values: [],
@@ -193,7 +203,7 @@ function respond(res, metrics) {
     },
     {
         plugin: "http",
-        type: "code",
+        unit: "code",
         dsnames: [],
         target_type: "gauge",
         values: [],
@@ -201,12 +211,15 @@ function respond(res, metrics) {
     }];
     ['dns','connect','send','wait','recv', 'total'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
-            metrics[m] = metrics[m];
+            metrics[m] = metrics[m] = Math.round(metrics[m] * 100) / 100;
         }
         payload[0].dsnames.push(m);
         payload[0].values.push(metrics[m]);
     });
     payload[1].dsnames.push('dataLength');
+    if (!isNaN(metrics['dataLength']) && metrics['dataLength'] > 0 ) {
+        metrics['dataLength'] = Math.round(metrics['dataLength'] * 100) / 100;
+    }
     payload[1].values.push(metrics['dataLength']);
     payload[1].dsnames.push('statusCode');
     payload[1].values.push(metrics['statusCode']);
