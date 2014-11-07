@@ -94,9 +94,9 @@ function respond(res, metrics) {
     {
         plugin: "ping",
         unit: "%",
-        dsnames: [],
+        dsnames: ["loss"],
         target_type: "gauge",
-        values: [Math.round(metrics.loss * 100) / 100],
+        values: [metrics.loss],
         time: metrics.startTime
     }];
     ['dns','min','max','avg', 'mdev'].forEach(function(m) {
