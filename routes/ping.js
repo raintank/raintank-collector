@@ -44,7 +44,11 @@ exports.run = function(req, res) {
 		async.series(pings, function(error, results) {
 			console.log(results);
 			session.close();
-			if (error) return res.json(500, error);
+			if (error) {
+				console.log("error received when performing pings.");
+				console.log(error);
+			 	return res.json(500, error);
+			}
 			var failCount = 0;
 			var totalCount = results.length;
 			var tsum = 0;
