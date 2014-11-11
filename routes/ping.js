@@ -9,6 +9,13 @@ var params = ['hostname'];
 */
 exports.run = function(req, res) {
 	var session = ping.createSession ();
+	var complete = false;
+	session.on("close", function() {
+		if (! complete) {
+			console.log("PING session closed early. recreateing it.");
+			session = ping.createSession();
+		}
+	});
 	var results = [];
 	var profile = {
 		dns: null,
@@ -17,7 +24,6 @@ exports.run = function(req, res) {
 		max: null,
 		avg: null,
 		mdev: null,
-		host: req.body.hostname,
 	};
 	var startTime = new Date();
     profile.startTime = startTime.getTime()/1000;
@@ -44,15 +50,15 @@ exports.run = function(req, res) {
 		    });
 		}
 		async.series(pings, function(error, results) {
+			complete = true;
 			console.log(results);
-			console.log('closing session for PING:%s', profile.host)
+			
 			session.close();
-			console.log('session closed for PING:%s', profile.host)
 			if (error) {
 				console.log("error received when performing pings.");
 				console.log(error);
+				complete = true;
 			 	res.json(500, error);
-			 	console.log('resp sent for PING:%s', profile.host);
 			 	return;
 			}
 			var failCount = 0;
@@ -93,7 +99,6 @@ exports.run = function(req, res) {
 }
 
 function respond(res, metrics) {
-
     var payload = [{
         plugin: "ping",
         unit: "ms",
@@ -119,6 +124,5 @@ function respond(res, metrics) {
         payload[0].time = metrics.startTime;
     });
     res.json({success: true, results: payload});
-    console.log('resp sent for PING:%s', metrics.host);
 }
 
