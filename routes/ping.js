@@ -4,16 +4,21 @@ var dns = require('dns');
 var async = require('async');
 
 var COUNT = 5;
+var sessionID = 1;
 /*
 var params = ['hostname'];
 */
 exports.run = function(req, res) {
-	var session = ping.createSession ();
+	var sid = sessionID++;
+	if (sessionID > 65000) {
+		sessionID = 1;
+	}
+	var session = ping.createSession ({retries: 0, sessionId: sid});
 	var complete = false;
 	session.on("close", function() {
 		if (! complete) {
 			console.log("PING session closed early. recreateing it.");
-			session = ping.createSession();
+			session = ping.createSession({retries: 0, sessionId: sid});
 		}
 	});
 	var results = [];
