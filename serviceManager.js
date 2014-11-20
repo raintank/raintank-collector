@@ -138,7 +138,7 @@ function run(serviceId) {
 	                    service: service._id,
 	                    level: 'critical',
 	                    details: config.location + " collector failed: "+service.error,
-	                    timestamp: timetamp
+	                    timestamp: timestamp
 	                });
 	            }
 	            var serviceState = 0;
