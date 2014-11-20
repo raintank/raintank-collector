@@ -27,7 +27,7 @@ function timeDiff(t1, t2) {
 var params = ['hostname','port','timeout','path','headers','auth','expectRegex','method','post'];
 */
 exports.run = function(req, res) {
-    exports.execute(payload, function(err, response) {
+    exports.execute(req.body, function(err, response) {
         if (err) {
             return res.json(500, err);
         }

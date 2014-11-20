@@ -9,7 +9,7 @@ var sessionID = 1;
 var params = ['hostname'];
 */
 exports.run = function(req, res) {
-    exports.execute(payload, function(err, response) {
+    exports.execute(req.body, function(err, response) {
         if (err) {
             return res.json(500, err);
         }
