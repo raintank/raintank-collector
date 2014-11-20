@@ -7,7 +7,7 @@ var util = require('util');
 var cluster = require('cluster');
 var HTTP = require('http');
 var numCPUs = 1;
-
+var serviceManager = require('./serviceManager');
 
 var app = express();
 
@@ -56,5 +56,6 @@ if (cluster.isMaster) {
     HTTP.createServer(app).listen(app.get('port'),function(){
         console.log('Express server listening on port ' + app.get('port'));
     });
+    serviceManager.init();
 }
 

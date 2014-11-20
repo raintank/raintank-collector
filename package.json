@@ -10,6 +10,11 @@
     "cluster": "*",
     "net-ping": "*",
     "net-snmp": "*",
-    "native-dns": "*"
+    "native-dns": "*",
+    "generic-pool": "*",
+    "node-zookeeper-client": "*",
+    "kafka-node": "*",
+    "string-hash": "*",
+    "socket.io-client": "*"
   }
 }

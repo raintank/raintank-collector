@@ -27,9 +27,18 @@ function timeDiff(t1, t2) {
 var params = ['hostname','port','timeout','path','headers','auth','expectRegex','method','post'];
 */
 exports.run = function(req, res) {
-    var hostname = req.body.hostname;
-    var headers = expandHeaders(req.body.headers);
-    var expectRegex = req.body.expectRegex;
+    exports.execute(payload, function(err, response) {
+        if (err) {
+            return res.json(500, err);
+        }
+        return res.json(response);
+    });
+};
+
+exports.execute = function(payload, callback) {
+    var hostname = payload.hostname;
+    var headers = expandHeaders(payload.headers);
+    var expectRegex = payload.expectRegex;
 
     if (! ('host' in headers)) {
         headers.host = hostname;
@@ -40,9 +49,9 @@ exports.run = function(req, res) {
 
     var opts = {
         headers: headers,
-        port: parseInt(req.body.port),
-        method: req.body.method,
-        path: req.body.path,
+        port: parseInt(payload.port),
+        method: payload.method,
+        path: payload.path,
         agent: false,
         servername: headers.host,
     };
@@ -70,10 +79,10 @@ exports.run = function(req, res) {
         if (request) {
             request.abort();
         }
-        metrics.error = "timed out after " + req.body.timeout + " seconds.";
+        metrics.error = "timed out after " + payload.timeout + " seconds.";
         metrics.total += timeDiff(endTime, step);
-        return respond(res, metrics);
-    }, req.body.timeout * 1000);
+        return respond(metrics, callback);
+    }, payload.timeout * 1000);
 
     dns.lookup(hostname, 4, function(err, address, family) {
         var dnsTime = process.hrtime();
@@ -82,7 +91,7 @@ exports.run = function(req, res) {
             if (timedout) return;
             console.log(err);
             metrics.error = "dns lookup failure.";
-            return respond(res, metrics);
+            return respond(metrics, callback);
         }
         metrics.dns = timeDiff(dnsTime, step);
         metrics.total += metrics.dns;
@@ -99,8 +108,8 @@ exports.run = function(req, res) {
                 metrics.total += metrics.connect;
                 step = socketConnectTime;
                 //SEND DATA HERE
-                if (req.body.method == "POST" && req.body.post) {
-                    request.write(req.body.post);
+                if (payload.method == "POST" && payload.post) {
+                    request.write(payload.post);
                 }
                 request.end();
             });
@@ -119,7 +128,7 @@ exports.run = function(req, res) {
             console.log('HTTP: error event emitted.');
             console.log(e);
             metrics.error = e.message;
-            return respond(res, metrics);
+            return respond(metrics, callback);
         });
         request.on('finish', function() {
             var requestEndTime = process.hrtime();
@@ -165,7 +174,7 @@ exports.run = function(req, res) {
                                 metrics.error = "expectRegex did not match.";
                             }
                           }
-                          respond(res, metrics);
+                          respond(metrics, callback);
                         });
                     } else {
                         var rexp = new RegExp(expectRegex, 'g');
@@ -173,10 +182,10 @@ exports.run = function(req, res) {
                             console.log("expectRegex did not match.");
                             metrics.error = "expectRegex did not match.";
                         }
-                        respond(res, metrics);
+                        respond(metrics, callback);
                     }
                 } else {
-                    return respond(res, metrics);
+                    return respond(metrics, callback);
                 }
             });
 
@@ -185,7 +194,7 @@ exports.run = function(req, res) {
 
 }
 
-function respond(res, metrics) {
+function respond(metrics, callback) {
     var payload = [{
         plugin: "http",
         unit: "ms",
@@ -224,6 +233,6 @@ function respond(res, metrics) {
     payload[1].dsnames.push('statusCode');
     payload[1].values.push(metrics['statusCode']);
 
-    res.json({success: true, results: payload, error: metrics.error});
+    callback(null, {success: true, results: payload, error: metrics.error});
 }
 

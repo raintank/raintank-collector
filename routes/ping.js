@@ -9,6 +9,15 @@ var sessionID = 1;
 var params = ['hostname'];
 */
 exports.run = function(req, res) {
+    exports.execute(payload, function(err, response) {
+        if (err) {
+            return res.json(500, err);
+        }
+        return res.json(response);
+    });
+};
+
+exports.execute = function(payload, callback) {
 	var sid = sessionID++;
 	if (sessionID > 65000) {
 		sessionID = 1;
@@ -33,11 +42,11 @@ exports.run = function(req, res) {
 	var startTime = new Date();
     profile.startTime = startTime.getTime()/1000;
     var step = startTime;
-	dns.lookup(req.body.hostname, 4, function(err, address, family) {
+	dns.lookup(payload.hostname, 4, function(err, address, family) {
         if (err) {
             console.log(err);
             profile.error = "dns lookup failure.";
-            respond(res, profile);
+            respond(profile, callback);
             return;
         }
         var dnsTime = new Date();
@@ -98,12 +107,12 @@ exports.run = function(req, res) {
 			} else {
 				profile.loss = 100 * (failCount/totalCount);
 			}
-			respond(res, profile);
+			respond(profile, callback);
 		});
 	});
 }
 
-function respond(res, metrics) {
+function respond(metrics, callback) {
     var payload = [{
         plugin: "ping",
         unit: "ms",
@@ -128,6 +137,6 @@ function respond(res, metrics) {
         payload[0].values.push(metrics[m]);
         payload[0].time = metrics.startTime;
     });
-    res.json({success: true, results: payload});
+    callback(null, {success: true, results: payload});
 }
 

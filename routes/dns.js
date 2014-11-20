@@ -11,14 +11,23 @@ function timeDiff(t1, t2) {
 var params = ['server', 'protocol', 'port', 'type','timeout','name', 'regexp'];
 */
 exports.run = function(req, res) {
+    exports.execute(payload, function(err, response) {
+        if (err) {
+            return res.json(500, err);
+        }
+        return res.json(response);
+    });
+};
+
+exports.execute = function(payload, callback) {
     var question = dns.Question({
-        name: req.body.name,
-        type: req.body.type,
+        name: payload.name,
+        type: payload.type,
     });
     var server = {
-        address: req.body.server,
-        port: parseInt(req.body.port),
-        type: req.body.protocol,
+        address: payload.server,
+        port: parseInt(payload.port),
+        type: payload.protocol,
     };
 
     var profile = {
@@ -30,18 +39,18 @@ exports.run = function(req, res) {
     var startTime = process.hrtime();
     profile.startTime = new Date().getTime()/1000;
     var step = startTime;
-    var dnsReq = dns.Request({question: question, server: server, timeout: (req.body.timeout * 1000), cache: false});
+    var dnsReq = dns.Request({question: question, server: server, timeout: (payload.timeout * 1000), cache: false});
     
     dnsReq.on('timeout', function(){
-        profile.error = "timed out after " + req.body.timeout + " seconds.";
-        respond(res, profile);
+        profile.error = "timed out after " + payload.timeout + " seconds.";
+        respond(profile, callback);
     });
 
     dnsReq.on('message', function(err, answer) {
         if (err) {
             console.log(err);
             profile.error = "dns lookup failure.";
-            return respond(res, profile);
+            return respond(profile, callback);
         }
         var dnsTime = process.hrtime();
         profile.time = timeDiff(dnsTime, step);
@@ -49,11 +58,11 @@ exports.run = function(req, res) {
             profile.ttl = answer.answer[0].ttl;
         }
         profile.answers = answer.answer.length;
-        if (req.body.regexp && req.body.regexp.length > 0) {
+        if (payload.regexp && payload.regexp.length > 0) {
             var regexMatch = false;
-            var regex = new RegExp(req.body.regexp);
+            var regex = new RegExp(payload.regexp);
             answer.answer.forEach(function(resp) {
-                var respText = toString(req.body.type, resp);
+                var respText = toString(payload.type, resp);
                 if (regex.test(respText)) {
                     regexMatch = true;
                 } 
@@ -62,13 +71,13 @@ exports.run = function(req, res) {
                 profile.error = 'Regular Expression not matched for any answer.';
             };
         }
-        respond(res, profile);
+        respond(profile, callback);
     });
     dnsReq.send()
 
 }
 
-function respond(res, metrics) {
+function respond(metrics, callback) {
     var payload = [{
         plugin: "dns",
         unit: "ms",
@@ -93,7 +102,7 @@ function respond(res, metrics) {
         values: [metrics.answers],
         time: metrics.startTime,
     }];
-    res.json({success: true, results: payload, error: metrics.error});
+    callback(null, {success: true, results: payload, error: metrics.error});
 }
 
 function toString(type, answer) {
