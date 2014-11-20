@@ -10,7 +10,7 @@ var metricCount = 0;
 setInterval(function() {
     console.log("Processing %s metric/min", metricCount);
     metricCount = 0;
-}, 3600000);
+}, 60000);
 
 
 var init = function() {
