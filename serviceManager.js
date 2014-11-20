@@ -64,12 +64,16 @@ function serviceRefresh(payload) {
 	services.forEach(function(service) {
 		if (!(service._id in serviceCache) || service.lastUpdate >= serviceCache[service._id].lastUpdate) {
 			service.reschedule = false;
-			if (!('timer' in service)) {
-				service.timer = setInterval(function() { run(service._id);}, service.frequency*1000);
-			} else if (serviceCache[service._id] && service.offset != serviceCache[service._id].offset) {
+			newService = false;
+			if (!(service._id in serviceCache)) {
+				newService = true;
+			} else if (service.offset != serviceCache[service._id].offset) {
 				service.reschedule = true;
 			}
 			serviceCache[service._id] = service;
+			if (newService) {
+				reschedule(service._id);
+			}
 		}
 		seen[service._id] = true;
 	});
@@ -143,7 +147,7 @@ function run(serviceId) {
 	                    account: service.account,
 	                    service: service._id,
 	                    level: 'critical',
-	                    details: config.location + " collector failed: "+service.error,
+	                    details: config.location + " collector failed: "+response.error,
 	                    timestamp: timestamp
 	                });
 	            }
