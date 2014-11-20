@@ -122,8 +122,6 @@ exports.execute = function(payload, callback) {
             if (timedout) return;
             metrics.send = timeDiff(requestEndTime, step);
             metrics.total += metrics.send;
-            console.log('HTTP: error event emitted.');
-            console.log(e);
             metrics.error = e.message;
             return respond(metrics, callback);
         });
@@ -142,8 +140,7 @@ exports.execute = function(payload, callback) {
             response.on('data', function(data) {
                 rawResp.push(data);
                 dataLength += data.length;
-                if (dataLength > (100*1024)) { //limit our size to 100Kb
-                    console.log("aborting request as dataLength limit reached.");
+                if (dataLength > (100*1024)) { //limit our size to 100Kb;
                     request.abort();
                 }
             });
@@ -166,7 +163,6 @@ exports.execute = function(payload, callback) {
                           } else {
                             var rexp = new RegExp(expectRegex, 'g');
                             if (!(rexp.test(decoded))) {
-                                console.log("expectRegex did not match.");
                                 metrics.error = "expectRegex did not match.";
                             }
                           }
@@ -175,7 +171,6 @@ exports.execute = function(payload, callback) {
                     } else {
                         var rexp = new RegExp(expectRegex, 'g');
                         if (!(rexp.test(rawResp))) {
-                            console.log("expectRegex did not match.");
                             metrics.error = "expectRegex did not match.";
                         }
                         respond(metrics, callback);

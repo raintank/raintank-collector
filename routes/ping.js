@@ -65,7 +65,6 @@ exports.execute = function(payload, callback) {
 		}
 		async.series(pings, function(error, results) {
 			complete = true;
-			console.log(results);
 			
 			session.close();
 			if (error) {

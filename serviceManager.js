@@ -6,6 +6,12 @@ var routes = require('./routes');
 var io = require('socket.io-client')
 serviceCache = {};
 var socket;
+var metricCount = 0;
+setInterval(function() {
+    console.log("Processing %s metric/min", metricCount);
+    metricCount = 0;
+}, 3600000);
+
 
 var init = function() {
 	socket = io(util.format("%s?token=%s&location=%s", config.serverUrl, config.adminToken, config.location));
@@ -160,7 +166,8 @@ function run(serviceId) {
 	                    id: service._id,
 	                }
 	            });
-	            console.log("sending results");
+
+	            metricCount = metricCount + payload.length;
 	            socket.emit('results', payload);
 	        }
 		});
