@@ -186,7 +186,7 @@ function reschedule(serviceId) {
     	service.timer = setInterval(function() { run(service._id);}, service.frequency*1000);
     } else {
     	setTimeout(function() {
-    		setInterval(function() {run(service._id);}, service.frequency * 1000);
+    		service.timer = setInterval(function() {run(service._id);}, service.frequency * 1000);
     	}, wait * 1000);
     }
 }
