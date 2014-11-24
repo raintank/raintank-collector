@@ -142,14 +142,14 @@ function run(serviceId) {
 	            }
 	            if (response.error ) {
 	            	console.log("error in check. sending event.")
-	            	var payload = {
+	            	var eventPayload = {
 	                    account: service.account,
 	                    service: service._id,
 	                    level: 'critical',
 	                    details: config.location + " collector failed: "+response.error,
 	                    timestamp: timestamp
 	                };
-	                compress(payload, function(err, buffer) {
+	                compress(eventPayload, function(err, buffer) {
 	                	if (err) {
 		            		console.log("Error compressing payload.");
 		            		console.log(err);
