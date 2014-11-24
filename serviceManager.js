@@ -142,13 +142,22 @@ function run(serviceId) {
 	            }
 	            if (response.error ) {
 	            	console.log("error in check. sending event.")
-	                socket.emit('serviceEvent', compress({
+	            	var payload = {
 	                    account: service.account,
 	                    service: service._id,
 	                    level: 'critical',
 	                    details: config.location + " collector failed: "+response.error,
 	                    timestamp: timestamp
-	                }));
+	                };
+	                compress(payload, function(err, buffer) {
+	                	if (err) {
+		            		console.log("Error compressing payload.");
+		            		console.log(err);
+		            		return;
+		            	}
+	                	socket.emit('serviceEvent', buffer);
+	                });
+	                
 	            }
 	            var serviceState = 0;
 	            if (events.length > 0) {
@@ -171,15 +180,23 @@ function run(serviceId) {
 	            });
 
 	            metricCount = metricCount + payload.length;
-	            socket.emit('results', compress(payload));
+	            compress(payload, function(err, buffer) {
+	            	if (err) {
+	            		console.log("Error compressing payload.");
+	            		console.log(err);
+	            		return;
+	            	}
+	            	socket.emit('results', buffer);
+	            });
+	            
 	        }
 		});
 	}
 }
 
-function compress(payload) {
+function compress(payload, cb) {
 	var data = new Buffer(JSON.stringify(payload));
-	return zlib.deflate(data);
+	zlib.deflate(data, cb);
 }
 
 function reschedule(serviceId) {
