@@ -2,16 +2,12 @@
 var config = require('./config');
 var util = require('util');
 var routes = require('./routes');
+var zlib = require('zlib');
 
 var io = require('socket.io-client')
 serviceCache = {};
 var socket;
 var metricCount = 0;
-setInterval(function() {
-    console.log("Processing %s metric/min", metricCount);
-    metricCount = 0;
-}, 60000);
-
 
 var init = function() {
 	socket = io(util.format("%s?token=%s&location=%s", config.serverUrl, config.adminToken, config.location));
@@ -38,10 +34,13 @@ var init = function() {
 	socket.on('disconnect', function(){
 	    console.log("serviceManager disconnected");
 	});
+	setInterval(function() {
+	    console.log("Processing %s metric/min", metricCount);
+	    metricCount = 0;
+	}, 60000);
 }
 
 exports.init = init;
-exports.serviceCache = serviceCache;
 
 function serviceUpdate(payload) {
 	var service = JSON.parse(payload);
@@ -88,7 +87,7 @@ function serviceRefresh(payload) {
 function serviceDelete(payload) {
 	var service = JSON.parse(payload);
 	if (service._id in serviceCache) {
-		if ('timer' in serviceCache[service.id]) {
+		if ('timer' in serviceCache[service._id]) {
 			clearInterval(serviceCache[service._id].timer);
 		}
 		delete serviceCache[service._id];
@@ -143,13 +142,13 @@ function run(serviceId) {
 	            }
 	            if (response.error ) {
 	            	console.log("error in check. sending event.")
-	                socket.emit('serviceEvent', {
+	                socket.emit('serviceEvent', compress({
 	                    account: service.account,
 	                    service: service._id,
 	                    level: 'critical',
 	                    details: config.location + " collector failed: "+response.error,
 	                    timestamp: timestamp
-	                });
+	                }));
 	            }
 	            var serviceState = 0;
 	            if (events.length > 0) {
@@ -172,10 +171,15 @@ function run(serviceId) {
 	            });
 
 	            metricCount = metricCount + payload.length;
-	            socket.emit('results', payload);
+	            socket.emit('results', compress(payload));
 	        }
 		});
 	}
+}
+
+function compress(payload) {
+	var data = new Buffer(JSON.stringify(payload));
+	return zlib.deflate(data);
 }
 
 function reschedule(serviceId) {
