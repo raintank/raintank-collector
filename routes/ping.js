@@ -26,7 +26,7 @@ exports.execute = function(payload, callback) {
 	var complete = false;
 	session.on("close", function() {
 		if (! complete) {
-			console.log("PING session closed early. recreateing it.");
+			console.log("PING session-%s closed early. recreating it.", sid);
 			session = ping.createSession({retries: 0, sessionId: sid});
 		}
 	});

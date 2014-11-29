@@ -10,7 +10,7 @@ var socket;
 var metricCount = 0;
 
 var init = function() {
-	socket = io(util.format("%s?token=%s&location=%s", config.serverUrl, config.adminToken, config.location));
+	socket = io(util.format("%s?token=%s&location=%s", config.serverUrl, config.adminToken, config.location), {transports: ["websocket"]});
 
 	socket.on('connect', function(){
 	    console.log('connected');
@@ -188,7 +188,6 @@ function run(serviceId) {
 	            	}
 	            	socket.emit('results', buffer);
 	            });
-	            
 	        }
 		});
 	}
