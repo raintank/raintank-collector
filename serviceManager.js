@@ -8,6 +8,8 @@ var io = require('socket.io-client')
 serviceCache = {};
 var socket;
 var metricCount = 0;
+var BUFFER = [];
+
 
 var init = function() {
 	socket = io(util.format("%s?token=%s&location=%s", config.serverUrl, config.adminToken, config.location), {transports: ["websocket"]});
@@ -35,9 +37,23 @@ var init = function() {
 	    console.log("serviceManager disconnected");
 	});
 	setInterval(function() {
-	    console.log("Processing %s metric/min", metricCount);
+	    console.log("Processing %s metrics/second", metricCount/10);
 	    metricCount = 0;
-	}, 60000);
+	}, 10000);
+
+	setInterval(function() {
+		var payload = BUFFER;
+		BUFFER = [];
+		metricCount = metricCount + payload.length;
+        compress(payload, function(err, buffer) {
+        	if (err) {
+        		console.log("Error compressing payload.");
+        		console.log(err);
+        		return;
+        	}
+        	socket.emit('results', buffer);
+        });
+	}, 100);
 }
 
 exports.init = init;
@@ -108,7 +124,6 @@ function run(serviceId) {
 		});
 		routes[route].execute(settings, function(err, response) {
 			if  (response.success) {
-				var payload = [];
 				var events = [];
 				var metrics = response.results;
 	            if (metrics) {
@@ -117,7 +132,7 @@ function run(serviceId) {
 	                    metric.interval = service.frequency;
 	                    var pos = 0;
 	                    metric.dsnames.forEach(function(dsname) {
-	                        payload.push({
+	                        BUFFER.push({
 	                            name: util.format(
 	                                "raintank.service.%s.%s.%s.%s",
 	                                service.code,
@@ -165,7 +180,7 @@ function run(serviceId) {
 	            }
 	            var metricName = util.format("raintank.service.%s.%s.%s.collector.state",
 	            					service.code, config.location, service.serviceType);
-	            payload.push({
+	            BUFFER.push({
 	                name: metricName,
 	                account: service.account,
 	                interval: service.frequency,
@@ -177,16 +192,6 @@ function run(serviceId) {
 	                    class: 'service',
 	                    id: service._id,
 	                }
-	            });
-
-	            metricCount = metricCount + payload.length;
-	            compress(payload, function(err, buffer) {
-	            	if (err) {
-	            		console.log("Error compressing payload.");
-	            		console.log(err);
-	            		return;
-	            	}
-	            	socket.emit('results', buffer);
 	            });
 	        }
 		});
