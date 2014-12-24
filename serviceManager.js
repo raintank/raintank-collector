@@ -129,7 +129,7 @@ function run(serviceId) {
 				var metrics = response.results;
 	            if (metrics) {
 	                metrics.forEach(function(metric) {
-	                    metric.location = config.location
+	                    metric.location = config.location.id;
 	                    metric.interval = service.frequency;
 	                    var pos = 0;
 	                    metric.dsnames.forEach(function(dsname) {
@@ -137,7 +137,7 @@ function run(serviceId) {
 	                            name: util.format(
 	                                "raintank.service.%s.%s.%s.%s",
 	                                service.code,
-	                                config.location,
+	                                config.location.id,
 	                                metric.plugin,
 	                                dsname
 	                            ),
@@ -162,7 +162,7 @@ function run(serviceId) {
 	                    account: service.account,
 	                    service: service._id,
 	                    level: 'critical',
-	                    details: config.location + " collector failed: "+response.error,
+	                    details: config.location.id + " collector failed: "+response.error,
 	                    timestamp: timestamp
 	                };
 	                compress(eventPayload, function(err, buffer) {
@@ -180,7 +180,7 @@ function run(serviceId) {
 	            	serviceState = 2;
 	            }
 	            var metricName = util.format("raintank.service.%s.%s.%s.collector.state",
-	            					service.code, config.location, service.serviceType);
+	            					service.code, config.location.id, service.serviceType);
 	            BUFFER.push({
 	                name: metricName,
 	                account: service.account,
