@@ -12,10 +12,11 @@ var BUFFER = [];
 
 
 var init = function() {
-	socket = io(util.format("%s?token=%s&location=%s", config.serverUrl, config.adminToken, config.location), {transports: ["websocket"]});
+	socket = io(util.format("%s?token=%s&location=%s", config.serverUrl, config.adminToken, config.location.id), {transports: ["websocket"]});
 
 	socket.on('connect', function(){
 	    console.log('connected');
+	    socket.emit('register', config.location);
 	});
 
 	socket.on('refresh', function(data){
