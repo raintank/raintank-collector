@@ -6,14 +6,10 @@
     "start": "node app.js"
   },
   "dependencies": {
-    "express": "3.*",
     "cluster": "*",
     "net-ping": "*",
     "net-snmp": "*",
     "native-dns": "*",
-    "generic-pool": "*",
-    "node-zookeeper-client": "*",
-    "kafka-node": "*",
     "string-hash": "*",
     "socket.io-client": "*"
   }

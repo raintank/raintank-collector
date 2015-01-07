@@ -5,17 +5,6 @@ var async = require('async');
 
 var COUNT = 5;
 var sessionID = 1;
-/*
-var params = ['hostname'];
-*/
-exports.run = function(req, res) {
-    exports.execute(req.body, function(err, response) {
-        if (err) {
-            return res.json(500, err);
-        }
-        return res.json(response);
-    });
-};
 
 exports.execute = function(payload, callback) {
 	var sid = sessionID++;

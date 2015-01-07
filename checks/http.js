@@ -1,11 +1,10 @@
 'use strict';
 var dns = require('dns');
-var https = require('https');
+var http = require('http');
 var zlib = require('zlib');
 
 function expandHeaders(headersTxt) {
     var headers = {};
-
     if (headersTxt && headersTxt.length > 0) {
         headersTxt.split("\n").forEach(function(headerStr) {
             var parts = headerStr.split(":");
@@ -23,18 +22,6 @@ function timeDiff(t1, t2) {
     //convert to milliseconds.
     return ((t1[0] - t2[0]) * 1e3) + ((t1[1] - t2[1])/1e6);
 }
-
-/*
-var params = ['hostname','port','timeout','path','headers','auth','expectRegex','method','post', 'validateCert'];
-*/
-exports.run = function(req, res) {
-    exports.execute(req.body, function(err, response) {
-        if (err) {
-            return res.json(500, err);
-        }
-        return res.json(response);
-    });
-};
 
 exports.execute = function(payload, callback) {
     var hostname = payload.hostname;
@@ -55,10 +42,7 @@ exports.execute = function(payload, callback) {
         path: payload.path,
         agent: false,
         servername: headers.host,
-        rejectUnauthorized: (payload.validateCert == 'true')? true: false,
     };
-    
-    
     var metrics = {
         dns: null,
         connect: null,
@@ -66,8 +50,8 @@ exports.execute = function(payload, callback) {
         wait: null,
         recv: null,
         total: 0,
-        statusCode: null,
         dataLength: null,
+        statusCode: null,
         error: null,
     };
 
@@ -99,27 +83,34 @@ exports.execute = function(payload, callback) {
         }
         metrics.dns = timeDiff(dnsTime, step);
         metrics.total += metrics.dns;
+        //console.log('setting http HOST to: ' + address);
         opts.host = address;
 
         step = dnsTime;
-        var request = https.request(opts);
+        request = http.request(opts);
+
         request.on('socket', function(socket) {
-            socket.on('secureConnect', function() {
+            socket.on('connect', function() {
                 var socketConnectTime = process.hrtime();
                 metrics.connect = timeDiff(socketConnectTime, step);
                 metrics.total += metrics.connect;
                 step = socketConnectTime;
+                //SEND DATA HERE
                 if (payload.method == "POST" && payload.post) {
                     request.write(payload.post);
                 }
                 request.end();
             });
-
+            socket.on('error', function(e) {
+                console.log('socket error');
+                console.log(e);
+            });
         });
         request.on('error', function(e) {
             var requestEndTime = process.hrtime();
             clearTimeout(timeoutId);
             if (timedout) return;
+
             metrics.send = timeDiff(requestEndTime, step);
             metrics.total += metrics.send;
             metrics.error = e.message;
@@ -135,12 +126,13 @@ exports.execute = function(payload, callback) {
             var responseTime = process.hrtime();
             metrics.wait = timeDiff(responseTime, step);
             metrics.total += metrics.wait;
+            step = responseTime;
             var rawResp = [];
             var dataLength = 0;
             response.on('data', function(data) {
                 rawResp.push(data);
                 dataLength += data.length;
-                if (dataLength > (100*1024)) { //limit our size to 100Kb;
+                if (dataLength > (100*1024)) { //limit our size to 100Kb
                     request.abort();
                 }
             });
@@ -179,28 +171,30 @@ exports.execute = function(payload, callback) {
                     return respond(metrics, callback);
                 }
             });
+
         });
     });
+
 }
 
 function respond(metrics, callback) {
     var payload = [{
-        plugin: "https",
+        plugin: "http",
         unit: "ms",
         dsnames: [],
         target_type: "gauge",
         values: [],
         time: metrics.startTime
     },{
-        plugin: "https",
-        unit: "bypes",
+        plugin: "http",
+        unit: "bytes",
         dsnames: [],
         target_type: "gauge",
         values: [],
         time: metrics.startTime
     },
     {
-        plugin: "https",
+        plugin: "http",
         unit: "code",
         dsnames: [],
         target_type: "gauge",
@@ -209,7 +203,7 @@ function respond(metrics, callback) {
     }];
     ['dns','connect','send','wait','recv', 'total'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
-            metrics[m] = Math.round(metrics[m] * 100) / 100;
+            metrics[m] = metrics[m] = Math.round(metrics[m] * 100) / 100;
         }
         payload[0].dsnames.push(m);
         payload[0].values.push(metrics[m]);
@@ -224,3 +218,4 @@ function respond(metrics, callback) {
 
     callback(null, {success: true, results: payload, error: metrics.error});
 }
+

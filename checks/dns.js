@@ -7,18 +7,6 @@ function timeDiff(t1, t2) {
     return ((t1[0] - t2[0]) * 1e3) + ((t1[1] - t2[1])/1e6);
 }
 
-/*
-var params = ['server', 'protocol', 'port', 'type','timeout','name', 'regexp'];
-*/
-exports.run = function(req, res) {
-    exports.execute(req.body, function(err, response) {
-        if (err) {
-            return res.json(500, err);
-        }
-        return res.json(response);
-    });
-};
-
 exports.execute = function(payload, callback) {
     var question = dns.Question({
         name: payload.name,

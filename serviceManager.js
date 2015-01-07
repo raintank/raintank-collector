@@ -1,7 +1,7 @@
 'use strict;'
-var config = require('./config');
+var config = require('./config').cnf();
 var util = require('util');
-var routes = require('./routes');
+var checks = require('./checks');
 var zlib = require('zlib');
 
 var io = require('socket.io-client')
@@ -117,13 +117,13 @@ function run(serviceId) {
 		reschedule(serviceId);
 	}
 	var timestamp = new Date().getTime();
-	var route = service.serviceType.toLowerCase();
-	if (route in routes) {
+	var check = service.serviceType.toLowerCase();
+	if (check in checks) {
 		var settings = {};
 		service.settings.forEach(function(setting) {
 			settings[setting.name] = setting.value;
 		});
-		routes[route].execute(settings, function(err, response) {
+		checks[check].execute(settings, function(err, response) {
 			if  (response.success) {
 				var events = [];
 				var metrics = response.results;
