@@ -2,14 +2,14 @@
 
 var config = {};
 config.location = {
-	"id": "DEV1",
-    "name": "Development",
+    "name": "Development12",
     "region": "AMER",
     "country": "US",
-    "provider": "Docker"
+    "provider": "Docker",
+    "public": false
 };
-config.serverUrl = "http://raintank-locationmgr:8181";
-config.adminToken = "jk832sjksf9asdkvnngddfg8sfk";
+config.serverUrl = "http://localhost:8181";
+config.token = "d4WuLk5HtBl2NOeAdeInACDaATHF2hI9HMMyj5vUKORjsX51rGp8scSjhvVKe4Q6";
 config.numCPUs = 1;
 
 
