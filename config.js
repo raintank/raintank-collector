@@ -2,14 +2,14 @@
 
 var config = {};
 config.location = {
-    "name": "Development12",
-    "region": "AMER",
-    "country": "US",
-    "provider": "Docker",
-    "public": false
+    "name": "PublicTest",
+    "region": "APAC",
+    "country": "SG",
+    "provider": "Desktop",
+    "public": true
 };
 config.serverUrl = "http://localhost:8181";
-config.token = "d4WuLk5HtBl2NOeAdeInACDaATHF2hI9HMMyj5vUKORjsX51rGp8scSjhvVKe4Q6";
+config.token = "3wJvQ3G7dZ0ZPGGAk1f2dEqSSLNl3MWGccj5Mm6w22Y2Iy0L1Xp8QH9WplfYV7Gd";
 config.numCPUs = 1;
 
 

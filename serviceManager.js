@@ -94,11 +94,11 @@ function serviceUpdate(payload) {
 	}
 }
 
-function serviceRefresh(services) {
-	console.log(services);
-	console.log("refreshing service list: count: %s", services.length);
+function serviceRefresh(payload) {
+	config.location = payload.location;
+	console.log("refreshing service list: count: %s", payload.services.length);
 	var seen = {};
-	services.forEach(function(service) {
+	payload.services.forEach(function(service) {
 		if (!(service.id in serviceCache) || service.lastUpdate >= serviceCache[service.id].lastUpdate) {
 			service.reschedule = false;
 			newService = false;
@@ -148,7 +148,7 @@ function run(serviceId) {
 			if  (response.success) {
 				var events = [];
 				var metrics = response.results;
-				console.log(metrics);
+				//console.log(metrics);
 	            if (metrics) {
 	                metrics.forEach(function(metric) {
 	                    metric.location = config.location.id;
@@ -158,12 +158,12 @@ function run(serviceId) {
 	                        BUFFER.push({
 	                            name: util.format(
 	                                "raintank.service.%s.%s.%s.%s",
-	                                service.code,
-	                                config.location.id,
+	                                service.slug,
+	                                config.location.slug,
 	                                metric.plugin,
 	                                dsname
 	                            ),
-	                            account: service.account,
+	                            account: service.account_id,
 	                            interval: service.frequency,
 	                            units: metric.unit,
 	                            target_type: metric.target_type,
@@ -181,13 +181,13 @@ function run(serviceId) {
 	            if (response.error ) {
 	            	console.log("error in check. sending event.")
 	            	var eventPayload = {
-	                    account: service.account,
+	                    account: service.account_id,
 	                    service: service.id,
 	                    level: 'critical',
 	                    details: config.location.name + " collector failed: "+response.error,
 	                    timestamp: timestamp
 	                };
-	                console.log(eventPayload);
+	                //console.log(eventPayload);
 	                compress(eventPayload, function(err, buffer) {
 	                	if (err) {
 		            		console.log("Error compressing payload.");
@@ -203,10 +203,10 @@ function run(serviceId) {
 	            	serviceState = 2;
 	            }
 	            var metricName = util.format("raintank.service.%s.%s.%s.collector.state",
-	            					service.code, config.location.name, service.serviceType);
+	            					service.slug, config.location.slug, check);
 	            BUFFER.push({
 	                name: metricName,
-	                account: service.account,
+	                account: service.account_id,
 	                interval: service.frequency,
 	                units: "state",
 	                target_type: "gauge",

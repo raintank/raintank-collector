@@ -14,27 +14,28 @@ function Client(options) {
 	this.port = options.port || 80;
 
 	this.base = options.base || '/';
-
+	this.token = options.token;
 	this.max_concurrency = options.max_concurrency || 10;
 	http.globalAgent.maxSockets = this.max_concurrency;
-	this.headers = {
-		'Content-Type' : 'application/json',
-		'Authorization': 'Bearer '+ this.token
-	};
 }
 
 Client.prototype.setToken = function(token) {
 	this.token = token;
-	this.headers.Authorization = 'Bearer ' + token;
 }
 
 Client.prototype.buildRequestOptions = function(method, path) {
+	var headers = {
+		'Authorization': 'Bearer '+ this.token
+	}
+	if (method in ["PUT","POST"]) {
+		headers['Content-Type'] = "application/json"
+	}
 	return  {
 		host: this.host,
 		port: this.port,
 		path: this.base + path,
 		method: method, 
-		headers: this.headers,
+		headers: headers,
 	};
 }
 
