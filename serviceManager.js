@@ -81,16 +81,17 @@ var init = function() {
 exports.init = init;
 
 function serviceUpdate(payload) {
+	console.log(payload);
 	var service = JSON.parse(payload);
-	console.log("got serviceUpdate message for service: %s", service._id);
-	if (!(service._id in serviceCache) || service.lastUpdate >= serviceCache[service._id].lastUpdate) {
+	console.log("got serviceUpdate message for service: %s", service.id);
+	if (!(service.id in serviceCache) || service.lastUpdate >= serviceCache[service.id].lastUpdate) {
 		service.reschedule = false;
 		if (!('timer' in service)) {
-			service.timer = setInterval(function() { run(service._id);}, service.frequency*1000);
-		} else if (serviceCache[service._id] && service.offset != serviceCache[service._id].offset) {
+			service.timer = setInterval(function() { run(service.id);}, service.frequency*1000);
+		} else if (serviceCache[service.id] && service.offset != serviceCache[service.id].offset) {
 			service.reschedule = true;
 		}
-		serviceCache[service._id] = service;
+		serviceCache[service.id] = service;
 	}
 }
 
