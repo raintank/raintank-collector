@@ -24,9 +24,13 @@ function timeDiff(t1, t2) {
 }
 
 exports.execute = function(payload, callback) {
-    var hostname = payload.hostname;
+    var hostname = payload.host;
     var headers = expandHeaders(payload.headers);
     var expectRegex = payload.expectRegex;
+
+    if (!("timeout" in payload)) {
+        payload.timeout = 10;
+    }
 
     if (! ('host' in headers)) {
         headers.host = hostname;
@@ -38,7 +42,7 @@ exports.execute = function(payload, callback) {
     var opts = {
         headers: headers,
         port: parseInt(payload.port),
-        method: payload.method,
+        method: payload.method || "GET",
         path: payload.path,
         agent: false,
         servername: headers.host,

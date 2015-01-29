@@ -3,6 +3,7 @@ var config = require('./config').cnf();
 var util = require('util');
 var checks = require('./checks');
 var zlib = require('zlib');
+var ApiClient = require("./raintank-api-client");
 
 var io = require('socket.io-client')
 serviceCache = {};
@@ -10,9 +11,29 @@ var socket;
 var metricCount = 0;
 var BUFFER = [];
 
+var monitorTypes = {};
+var apiClient = new ApiClient({
+	host: "localhost",
+	port: 3000,
+	base: "/api/",
+});
+apiClient.setToken(config.token);
+
 
 var init = function() {
-	socket = io(util.format("%s?token=%s&location=%s", config.serverUrl, config.adminToken, config.location.id), {transports: ["websocket"]});
+
+	apiClient.get('monitor_types', function(err, res) {
+		if (err) {
+			console.log("failed to get monitor_types");
+			console.log(err);
+			return process.exit(1);
+		}
+		res.data.forEach(function(type) {
+			monitorTypes[type.id] = type;
+		});
+	});
+
+	socket = io(util.format("%s?token=%s", config.serverUrl, config.token), {transports: ["websocket"]});
 
 	socket.on('connect', function(){
 	    console.log('connected');
@@ -60,38 +81,39 @@ var init = function() {
 exports.init = init;
 
 function serviceUpdate(payload) {
+	console.log(payload);
 	var service = JSON.parse(payload);
-	console.log("got serviceUpdate message for service: %s", service._id);
-	if (!(service._id in serviceCache) || service.lastUpdate >= serviceCache[service._id].lastUpdate) {
+	console.log("got serviceUpdate message for service: %s", service.id);
+	if (!(service.id in serviceCache) || service.lastUpdate >= serviceCache[service.id].lastUpdate) {
 		service.reschedule = false;
 		if (!('timer' in service)) {
-			service.timer = setInterval(function() { run(service._id);}, service.frequency*1000);
-		} else if (serviceCache[service._id] && service.offset != serviceCache[service._id].offset) {
+			service.timer = setInterval(function() { run(service.id);}, service.frequency*1000);
+		} else if (serviceCache[service.id] && service.offset != serviceCache[service.id].offset) {
 			service.reschedule = true;
 		}
-		serviceCache[service._id] = service;
+		serviceCache[service.id] = service;
 	}
 }
 
 function serviceRefresh(payload) {
-	var services = JSON.parse(payload);
-	console.log("refreshing service list: count: %s", services.length);
+	config.location = payload.location;
+	console.log("refreshing service list: count: %s", payload.services.length);
 	var seen = {};
-	services.forEach(function(service) {
-		if (!(service._id in serviceCache) || service.lastUpdate >= serviceCache[service._id].lastUpdate) {
+	payload.services.forEach(function(service) {
+		if (!(service.id in serviceCache) || service.lastUpdate >= serviceCache[service.id].lastUpdate) {
 			service.reschedule = false;
 			newService = false;
-			if (!(service._id in serviceCache)) {
+			if (!(service.id in serviceCache)) {
 				newService = true;
-			} else if (service.offset != serviceCache[service._id].offset) {
+			} else if (service.offset != serviceCache[service.id].offset) {
 				service.reschedule = true;
 			}
-			serviceCache[service._id] = service;
+			serviceCache[service.id] = service;
 			if (newService) {
-				reschedule(service._id);
+				reschedule(service.id);
 			}
 		}
-		seen[service._id] = true;
+		seen[service.id] = true;
 	});
 	Object.keys(serviceCache).forEach(function(id) {
 		if (!(id in seen)) {
@@ -103,11 +125,11 @@ function serviceRefresh(payload) {
 
 function serviceDelete(payload) {
 	var service = JSON.parse(payload);
-	if (service._id in serviceCache) {
-		if ('timer' in serviceCache[service._id]) {
-			clearInterval(serviceCache[service._id].timer);
+	if (service.id in serviceCache) {
+		if ('timer' in serviceCache[service.id]) {
+			clearInterval(serviceCache[service.id].timer);
 		}
-		delete serviceCache[service._id];
+		delete serviceCache[service.id];
 	}
 }
 
@@ -117,7 +139,7 @@ function run(serviceId) {
 		reschedule(serviceId);
 	}
 	var timestamp = new Date().getTime();
-	var check = service.serviceType.toLowerCase();
+	var check = monitorTypes[service.monitor_type_id].name.toLowerCase();
 	if (check in checks) {
 		var settings = {};
 		service.settings.forEach(function(setting) {
@@ -127,6 +149,7 @@ function run(serviceId) {
 			if  (response.success) {
 				var events = [];
 				var metrics = response.results;
+				//console.log(metrics);
 	            if (metrics) {
 	                metrics.forEach(function(metric) {
 	                    metric.location = config.location.id;
@@ -136,12 +159,12 @@ function run(serviceId) {
 	                        BUFFER.push({
 	                            name: util.format(
 	                                "raintank.service.%s.%s.%s.%s",
-	                                service.code,
-	                                config.location.id,
+	                                service.slug,
+	                                config.location.slug,
 	                                metric.plugin,
 	                                dsname
 	                            ),
-	                            account: service.account,
+	                            account: service.account_id,
 	                            interval: service.frequency,
 	                            units: metric.unit,
 	                            target_type: metric.target_type,
@@ -149,7 +172,7 @@ function run(serviceId) {
 	                            time: timestamp/1000,
 	                            parent: {
 	                                class: 'service',
-	                                id: service._id,
+	                                id: service.id,
 	                            }
 	                        });
 	                        pos++;
@@ -159,12 +182,13 @@ function run(serviceId) {
 	            if (response.error ) {
 	            	console.log("error in check. sending event.")
 	            	var eventPayload = {
-	                    account: service.account,
-	                    service: service._id,
+	                    account: service.account_id,
+	                    service: service.id,
 	                    level: 'critical',
-	                    details: config.location.id + " collector failed: "+response.error,
+	                    details: config.location.name + " collector failed: "+response.error,
 	                    timestamp: timestamp
 	                };
+	                //console.log(eventPayload);
 	                compress(eventPayload, function(err, buffer) {
 	                	if (err) {
 		            		console.log("Error compressing payload.");
@@ -180,10 +204,10 @@ function run(serviceId) {
 	            	serviceState = 2;
 	            }
 	            var metricName = util.format("raintank.service.%s.%s.%s.collector.state",
-	            					service.code, config.location.id, service.serviceType);
+	            					service.slug, config.location.slug, check);
 	            BUFFER.push({
 	                name: metricName,
-	                account: service.account,
+	                account: service.account_id,
 	                interval: service.frequency,
 	                units: "state",
 	                target_type: "gauge",
@@ -191,7 +215,7 @@ function run(serviceId) {
 	                time: timestamp/1000,
 	                parent: {
 	                    class: 'service',
-	                    id: service._id,
+	                    id: service.id,
 	                }
 	            });
 	        }
@@ -213,10 +237,10 @@ function reschedule(serviceId) {
 
     var wait = ((service.frequency + service.offset) - (seconds % service.frequency)) % service.frequency;
     if (wait == 0) {
-    	service.timer = setInterval(function() { run(service._id);}, service.frequency*1000);
+    	service.timer = setInterval(function() { run(service.id);}, service.frequency*1000);
     } else {
     	setTimeout(function() {
-    		service.timer = setInterval(function() {run(service._id);}, service.frequency * 1000);
+    		service.timer = setInterval(function() {run(service.id);}, service.frequency * 1000);
     	}, wait * 1000);
     }
 }
