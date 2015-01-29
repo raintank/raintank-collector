@@ -11,7 +11,11 @@ config.location = {
 config.serverUrl = "http://localhost:8181";
 config.token = "3wJvQ3G7dZ0ZPGGAk1f2dEqSSLNl3MWGccj5Mm6w22Y2Iy0L1Xp8QH9WplfYV7Gd";
 config.numCPUs = 1;
-
+config.api = {
+  host: "localhost",
+  port: 3000,
+  path: "/api/"
+};
 
 function parseEnv(name, value, cnf) {
 	if (name in cnf) {
