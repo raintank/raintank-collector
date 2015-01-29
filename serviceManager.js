@@ -13,9 +13,9 @@ var BUFFER = [];
 
 var monitorTypes = {};
 var apiClient = new ApiClient({
-	host: "localhost",
-	port: 3000,
-	base: "/api/",
+    host: config.api.host,
+    port: config.api.port,
+    base: config.api.path,
 });
 apiClient.setToken(config.token);
 
