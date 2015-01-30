@@ -143,7 +143,7 @@ function run(serviceId) {
 	if (check in checks) {
 		var settings = {};
 		service.settings.forEach(function(setting) {
-			settings[setting.name] = setting.value;
+			settings[setting.variable] = setting.value;
 		});
 		checks[check].execute(settings, function(err, response) {
 			if  (response.success) {
