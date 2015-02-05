@@ -8,11 +8,11 @@ config.location = {
     "provider": "Desktop",
     "public": true
 };
-config.serverUrl = "http://localhost:8181";
+config.serverUrl = "http://collector-ctrl:8181";
 config.token = "3wJvQ3G7dZ0ZPGGAk1f2dEqSSLNl3MWGccj5Mm6w22Y2Iy0L1Xp8QH9WplfYV7Gd";
-config.numCPUs = 1;
+config.numCPUs = 2;
 config.api = {
-  host: "localhost",
+  host: "grafana-pro",
   port: 3000,
   path: "/api/"
 };

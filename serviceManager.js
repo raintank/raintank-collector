@@ -83,12 +83,16 @@ exports.init = init;
 function serviceUpdate(payload) {
 	console.log(payload);
 	var service = JSON.parse(payload);
+	service.updated = new Date(service.updated);
+	currentService = serviceCache[service.id] || service;
 	console.log("got serviceUpdate message for service: %s", service.id);
-	if (!(service.id in serviceCache) || service.lastUpdate >= serviceCache[service.id].lastUpdate) {
+	if (service.updated >= currentService.updated) {
 		service.reschedule = false;
-		if (!('timer' in service)) {
+		if (!('timer' in currentService)) {
 			service.timer = setInterval(function() { run(service.id);}, service.frequency*1000);
-		} else if (serviceCache[service.id] && service.offset != serviceCache[service.id].offset) {
+		} else if (service.offset != currentService.offset) {
+			service.reschedule = true;
+		} else if (service.frequency != currentService.frequency) {
 			service.reschedule = true;
 		}
 		serviceCache[service.id] = service;
@@ -97,15 +101,18 @@ function serviceUpdate(payload) {
 
 function serviceRefresh(payload) {
 	config.location = payload.location;
-	console.log("refreshing service list: count: %s", payload.services.length);
+	console.log("PID%s: refreshing service list: count: %s", process.pid, payload.services.length);
 	var seen = {};
 	payload.services.forEach(function(service) {
-		if (!(service.id in serviceCache) || service.lastUpdate >= serviceCache[service.id].lastUpdate) {
+		service.updated = new Date(service.updated);
+		if (!(service.id in serviceCache) || service.updated >= serviceCache[service.id].updated) {
 			service.reschedule = false;
 			newService = false;
 			if (!(service.id in serviceCache)) {
 				newService = true;
 			} else if (service.offset != serviceCache[service.id].offset) {
+				service.reschedule = true;
+			} else if (service.frequency != serviceCache[service.id].frequency) {
 				service.reschedule = true;
 			}
 			serviceCache[service.id] = service;
@@ -135,6 +142,9 @@ function serviceDelete(payload) {
 
 function run(serviceId) {
 	var service = serviceCache[serviceId];
+	if (!service) {
+		return;
+	}
 	if (service.reschedule) {
 		reschedule(serviceId);
 	}
