@@ -9,10 +9,10 @@ config.location = {
     "public": true
 };
 config.serverUrl = "http://collector-ctrl:8181";
-config.token = "3wJvQ3G7dZ0ZPGGAk1f2dEqSSLNl3MWGccj5Mm6w22Y2Iy0L1Xp8QH9WplfYV7Gd";
+config.token = "jmZ9fD7VclvKEJRhemhmkjPQFZNTt5g6t1Lk6GmBrxwwUQKNhiIv92c9tUXO6Q1n";
 config.numCPUs = 2;
 config.api = {
-  host: "grafana-pro",
+  host: "grafana",
   port: 3000,
   path: "/api/"
 };

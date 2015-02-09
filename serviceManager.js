@@ -43,10 +43,16 @@ var init = function() {
 	socket.on('refresh', function(data){
 	    serviceRefresh(data);
 	});
-	socket.on('update', function(data) {
+
+	socket.on('updated', function(data) {
 		serviceUpdate(data);
 	});
-	socket.on('remove', function(data) {
+
+	socket.on('created', function(data) {
+                serviceUpdate(data);
+        });
+
+	socket.on('removed', function(data) {
 		serviceDelete(data);
 	});
 
