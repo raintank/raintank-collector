@@ -65,7 +65,7 @@ var init = function() {
 	    console.log("serviceManager disconnected");
 	});
 	setInterval(function() {
-	    console.log("Processing %s metrics/second", metricCount/10);
+	    console.log("Processing %s metrics/second %s checks", metricCount/10, Object.keys(serviceCache).length);
 	    metricCount = 0;
 	}, 10000);
 
@@ -87,14 +87,18 @@ var init = function() {
 exports.init = init;
 
 function serviceUpdate(payload) {
-	console.log(payload);
 	var service = JSON.parse(payload);
-	service.updated = new Date(service.updated);
+	if (!("updated" in service)) {
+		service.updated = new Date(service.timestamp);
+	} else {
+		service.updated = new Date(service.updated);
+	}
 	currentService = serviceCache[service.id] || service;
 	console.log("got serviceUpdate message for service: %s", service.id);
 	if (service.updated >= currentService.updated) {
 		service.reschedule = false;
 		if (!('timer' in currentService)) {
+			console.log("%s scheduling new service", process.pid);
 			service.timer = setInterval(function() { run(service.id);}, service.frequency*1000);
 		} else if (service.offset != currentService.offset) {
 			service.reschedule = true;
@@ -139,6 +143,7 @@ function serviceRefresh(payload) {
 function serviceDelete(payload) {
 	var service = JSON.parse(payload);
 	if (service.id in serviceCache) {
+		console.log("removing monitor %s", service.id);
 		if ('timer' in serviceCache[service.id]) {
 			clearInterval(serviceCache[service.id].timer);
 		}
