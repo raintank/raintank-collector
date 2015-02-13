@@ -16,6 +16,7 @@ var apiClient = new ApiClient({
     host: config.api.host,
     port: config.api.port,
     base: config.api.path,
+    proto: config.api.protocol || "http",
 });
 apiClient.setToken(config.token);
 
@@ -32,8 +33,11 @@ var init = function() {
 			monitorTypes[type.id] = type;
 		});
 	});
-
-	socket = io(util.format("%s?token=%s", config.serverUrl, config.token), {transports: ["websocket"]});
+	var secure = false;
+	if (config.serverUrl.indexOf('https://') == 0) {
+		secure = true;
+	}
+	socket = io(util.format("%s?token=%s", config.serverUrl, config.token), {transports: ["websocket"], secure: secure});
 
 	socket.on('connect', function(){
 	    console.log('connected');

@@ -14,7 +14,8 @@ config.numCPUs = 2;
 config.api = {
   host: "grafana",
   port: 3000,
-  path: "/api/"
+  path: "/api/",
+  protocol: "http"
 };
 
 function parseEnv(name, value, cnf) {

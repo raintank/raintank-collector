@@ -7,6 +7,7 @@ var http = require('http'),
 	querystring = require("querystring");
 
 module.exports = Client;
+var protocol;
 
 // Client Class
 function Client(options) {
@@ -16,7 +17,9 @@ function Client(options) {
 	this.base = options.base || '/';
 	this.token = options.token;
 	this.max_concurrency = options.max_concurrency || 10;
-	http.globalAgent.maxSockets = this.max_concurrency;
+	this.protocol = options.proto || 'http';
+	protocol = (this.protocol === 'https') ? https : http;
+	protocol.globalAgent.maxSockets = this.max_concurrency;
 }
 
 Client.prototype.setToken = function(token) {
@@ -45,7 +48,7 @@ Client.prototype.request = function(method, path, data, callback) {
 		data = null;
 	}
 	var opts = this.buildRequestOptions(method, path);
-	var request = http.request(opts, function(res) {
+	var request = protocol.request(opts, function(res) {
 		var err = null;
 		if (res.statusCode > 299) {
 			err = new Error('request failed. StatusCode: '+ res.statusCode);
