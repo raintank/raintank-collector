@@ -164,13 +164,13 @@ function run(serviceId) {
 		reschedule(serviceId);
 	}
 	var timestamp = new Date().getTime();
-	var check = monitorTypes[service.monitor_type_id].name.toLowerCase();
-	if (check in checks) {
+	var type = monitorTypes[service.monitor_type_id].name.toLowerCase();
+	if (type in checks) {
 		var settings = {};
 		service.settings.forEach(function(setting) {
 			settings[setting.variable] = setting.value;
 		});
-		checks[check].execute(settings, function(err, response) {
+		checks[type].execute(settings, function(err, response) {
 			if  (response.success) {
 				var events = [];
 				var metrics = response.results;
@@ -183,22 +183,22 @@ function run(serviceId) {
 	                    metric.dsnames.forEach(function(dsname) {
 	                        BUFFER.push({
 	                            name: util.format(
-	                                "raintank.service.%s.%s.%s.%s",
+	                                "network.%s.%s.%s.%s",
+	                                type,
 	                                service.slug,
 	                                config.location.slug,
-	                                metric.plugin,
 	                                dsname
 	                            ),
 	                            account: service.account_id,
+	                            location: config.location.slug,
+	                            metric: util.format("network.%s.%s", type, dsname),
 	                            interval: service.frequency,
-	                            units: metric.unit,
+	                            unit: metric.unit,
 	                            target_type: metric.target_type,
 	                            value: metric.values[pos],
 	                            time: timestamp/1000,
-	                            parent: {
-	                                class: 'service',
-	                                id: service.id,
-	                            }
+	                            site: service.site_id,
+	                            monitor: service.id,
 	                        });
 	                        pos++;
 	                    });
@@ -207,10 +207,13 @@ function run(serviceId) {
 	            if (response.error ) {
 	            	console.log("error in check. sending event.")
 	            	var eventPayload = {
+	            		event_type: "collector_error",
 	                    account: service.account_id,
-	                    service: service.id,
+	                    site: service.site_id,
+	                    location: config.location.slug,
+	                    monitor: service.id,
 	                    level: 'critical',
-	                    details: config.location.name + " collector failed: "+response.error,
+	                    details: response.error,
 	                    timestamp: timestamp
 	                };
 	                //console.log(eventPayload);
@@ -228,20 +231,20 @@ function run(serviceId) {
 	            if (events.length > 0) {
 	            	serviceState = 2;
 	            }
-	            var metricName = util.format("raintank.service.%s.%s.%s.collector.state",
-	            					service.slug, config.location.slug, check);
+	            var metricName = util.format("network.%s.%s.%s.state",
+	            					type, service.slug, config.location.slug);
 	            BUFFER.push({
 	                name: metricName,
 	                account: service.account_id,
+	                location: config.location.slug,
+	               	metric: util.format("network.%s.%s", type, "state"),
 	                interval: service.frequency,
-	                units: "state",
+	                unit: "state",
 	                target_type: "gauge",
 	                value: serviceState,
 	                time: timestamp/1000,
-	                parent: {
-	                    class: 'service',
-	                    id: service.id,
-	                }
+	                site: service.site_id,
+	                monitor: service.id,
 	            });
 	        }
 		});
