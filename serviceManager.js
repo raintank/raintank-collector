@@ -183,7 +183,8 @@ function run(serviceId) {
 	                    metric.dsnames.forEach(function(dsname) {
 	                        BUFFER.push({
 	                            name: util.format(
-	                                "network.%s.%s.%s.%s",
+	                                "%s.%s.%s.%s.%s",
+	                                service.namespace,
 	                                type,
 	                                service.slug,
 	                                config.location.slug,
@@ -231,8 +232,8 @@ function run(serviceId) {
 	            if (events.length > 0) {
 	            	serviceState = 2;
 	            }
-	            var metricName = util.format("network.%s.%s.%s.state",
-	            					type, service.slug, config.location.slug);
+	            var metricName = util.format("%s.%s.%s.%s.state",
+	            					service.namespace, type, service.slug, config.location.slug);
 	            BUFFER.push({
 	                name: metricName,
 	                account: service.account_id,
