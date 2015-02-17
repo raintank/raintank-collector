@@ -200,7 +200,7 @@ function respond(metrics, callback) {
     {
         plugin: "http",
         unit: "code",
-        dsnames: [],
+        dsnames: ["statusCode"],
         target_type: "gauge",
         values: [],
         time: metrics.startTime
@@ -217,8 +217,7 @@ function respond(metrics, callback) {
         metrics['dataLength'] = Math.round(metrics['dataLength'] * 100) / 100;
     }
     payload[1].values.push(metrics['dataLength']);
-    payload[1].dsnames.push('statusCode');
-    payload[1].values.push(metrics['statusCode']);
+    payload[2].values.push(metrics['statusCode']);
 
     callback(null, {success: true, results: payload, error: metrics.error});
 }
