@@ -208,13 +208,14 @@ function run(serviceId) {
 	            if (response.error ) {
 	            	console.log("error in check. sending event.")
 	            	var eventPayload = {
+	            		source: "network_collector",
 	            		event_type: "collector_error",
-	                    account: service.account_id,
-	                    site: service.site_id,
+	                    account_id: service.account_id,
+	                    site_id: service.site_id,
 	                    location: config.location.slug,
-	                    monitor: service.id,
-	                    level: 'critical',
-	                    details: response.error,
+	                    monitor: service.slug,
+	                    severity: 'ERROR',
+	                    message: response.error,
 	                    timestamp: timestamp
 	                };
 	                //console.log(eventPayload);
@@ -224,13 +225,13 @@ function run(serviceId) {
 		            		console.log(err);
 		            		return;
 		            	}
-	                	socket.emit('serviceEvent', buffer);
+	                	socket.emit('event', buffer);
 	                });
 	                
 	            }
 	            var serviceState = 0;
 	            if (events.length > 0) {
-	            	serviceState = 2;
+	            	serviceState = 1;
 	            }
 	            var metricName = util.format("%s.%s.%s.%s.state",
 	            					service.namespace, type, service.slug, config.location.slug);
