@@ -214,7 +214,7 @@ function run(serviceId) {
                     serviceState = 1;
                     var eventPayload = {
                         source: "network_collector",
-                        event_type: "collector_error",
+                        event_type: "monitor_state",
                         account_id: service.account_id,
                         site_id: service.site_id,
                         location: config.location.slug,
@@ -238,7 +238,7 @@ function run(serviceId) {
                 if (serviceState == 0 && service.state != 0) {
                     var eventPayload = {
                         source: "network_collector",
-                        event_type: "collector_error",
+                        event_type: "monitor_state",
                         account_id: service.account_id,
                         site_id: service.site_id,
                         location: config.location.slug,
