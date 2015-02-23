@@ -1,5 +1,6 @@
 'use strict';
 var dns = require('native-dns');
+var basicDns = require('dns');
 var util = require('util');
 
 function timeDiff(t1, t2) {
@@ -12,57 +13,62 @@ exports.execute = function(payload, callback) {
         name: payload.name,
         type: payload.type,
     });
-    var server = {
-        address: payload.server,
-        port: parseInt(payload.port),
-        type: payload.protocol,
-    };
-
     var profile = {
         time: null,
         ttl: null,
         answers: null,
     };
-
-    var startTime = process.hrtime();
-    profile.startTime = new Date().getTime()/1000;
-    var step = startTime;
-    var dnsReq = dns.Request({question: question, server: server, timeout: (payload.timeout * 1000), cache: false});
-    
-    dnsReq.on('timeout', function(){
-        profile.error = "timed out after " + payload.timeout + " seconds.";
-        respond(profile, callback);
-    });
-
-    dnsReq.on('message', function(err, answer) {
+    var nsserver = null;
+    basicDns.lookup(payload.server, 4, function(err, address, family) {
         if (err) {
-            console.log(err);
-            profile.error = "dns lookup failure.";
+            profile.error = "Could not resolve IP of server.";
             return respond(profile, callback);
         }
-        var dnsTime = process.hrtime();
-        profile.time = timeDiff(dnsTime, step);
-        if (answer.answer.length > 0) {
-            profile.ttl = answer.answer[0].ttl;
-        }
-        profile.answers = answer.answer.length;
-        if (payload.regexp && payload.regexp.length > 0) {
-            var regexMatch = false;
-            var regex = new RegExp(payload.regexp);
-            answer.answer.forEach(function(resp) {
-                var respText = toString(payload.type, resp);
-                if (regex.test(respText)) {
-                    regexMatch = true;
-                } 
-            });
-            if (!(regexMatch)) {
-                profile.error = 'Regular Expression not matched for any answer.';
-            };
-        }
-        respond(profile, callback);
-    });
-    dnsReq.send()
+        var server = {
+            address: address,
+            port: parseInt(payload.port),
+            type: payload.protocol,
+        };
 
+        var startTime = process.hrtime();
+        profile.startTime = new Date().getTime()/1000;
+        var step = startTime;
+        var dnsReq = dns.Request({question: question, server: server, timeout: (payload.timeout * 1000), cache: false});
+        
+        dnsReq.on('timeout', function(){
+            profile.error = "timed out after " + payload.timeout + " seconds.";
+            respond(profile, callback);
+        });
+
+        dnsReq.on('message', function(err, answer) {
+            if (err) {
+                console.log(err);
+                profile.error = "dns lookup failure.";
+                return respond(profile, callback);
+            }
+            var dnsTime = process.hrtime();
+            profile.time = timeDiff(dnsTime, step);
+            if (answer.answer.length > 0) {
+                profile.ttl = answer.answer[0].ttl;
+            }
+            profile.answers = answer.answer.length;
+            if (payload.regexp && payload.regexp.length > 0) {
+                var regexMatch = false;
+                var regex = new RegExp(payload.regexp);
+                answer.answer.forEach(function(resp) {
+                    var respText = toString(payload.type, resp);
+                    if (regex.test(respText)) {
+                        regexMatch = true;
+                    } 
+                });
+                if (!(regexMatch)) {
+                    profile.error = 'Regular Expression not matched for any answer.';
+                };
+            }
+            respond(profile, callback);
+        });
+        dnsReq.send()
+    });
 }
 
 function respond(metrics, callback) {

@@ -173,6 +173,9 @@ function run(serviceId) {
         service.settings.forEach(function(setting) {
             settings[setting.variable] = setting.value;
         });
+        if (!("timeout" in settings)) {
+            settings["timeout"] = 10;
+        }
         checks[type].execute(settings, function(err, response) {
             if  (response.success) {
                 var events = [];

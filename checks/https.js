@@ -25,7 +25,7 @@ function timeDiff(t1, t2) {
 }
 
 exports.execute = function(payload, callback) {
-    var hostname = payload.hostname;
+    var hostname = payload.host;
     var headers = expandHeaders(payload.headers);
     var expectRegex = payload.expectRegex;
 
@@ -45,7 +45,6 @@ exports.execute = function(payload, callback) {
         servername: headers.host,
         rejectUnauthorized: (payload.validateCert == 'true')? true: false,
     };
-    
     
     var metrics = {
         dns: null,
