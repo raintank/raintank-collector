@@ -10,7 +10,6 @@
     "net-ping": "*",
     "net-snmp": "*",
     "native-dns": "*",
-    "string-hash": "*",
     "socket.io-client": "*"
   }
 }

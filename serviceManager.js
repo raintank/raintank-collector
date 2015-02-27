@@ -196,7 +196,7 @@ function run(serviceId) {
                                     config.location.slug,
                                     dsname
                                 ),
-                                account: service.account_id,
+                                org_id: service.org_id,
                                 location: config.location.slug,
                                 metric: util.format("network.%s.%s", type, dsname),
                                 interval: service.frequency,
@@ -204,8 +204,8 @@ function run(serviceId) {
                                 target_type: metric.target_type,
                                 value: metric.values[pos],
                                 time: timestamp/1000,
-                                site: service.site_id,
-                                monitor: service.id,
+                                site_id: service.site_id,
+                                monitor_id: service.id,
                             });
                             pos++;
                         });
@@ -218,7 +218,7 @@ function run(serviceId) {
                     var eventPayload = {
                         source: "network_collector",
                         event_type: "monitor_state",
-                        account_id: service.account_id,
+                        org_id: service.org_id,
                         site_id: service.site_id,
                         location: config.location.slug,
                         monitor: service.slug,
@@ -242,7 +242,7 @@ function run(serviceId) {
                     var eventPayload = {
                         source: "network_collector",
                         event_type: "monitor_state",
-                        account_id: service.account_id,
+                        org_id: service.org_id,
                         site_id: service.site_id,
                         location: config.location.slug,
                         monitor: service.slug,
@@ -265,7 +265,7 @@ function run(serviceId) {
                                     service.namespace, type, service.slug, config.location.slug);
                 BUFFER.push({
                     name: metricName,
-                    account: service.account_id,
+                    org_id: service.org_id,
                     location: config.location.slug,
                     metric: util.format("network.%s.%s", type, "state"),
                     interval: service.frequency,
@@ -273,8 +273,8 @@ function run(serviceId) {
                     target_type: "gauge",
                     value: serviceState,
                     time: timestamp/1000,
-                    site: service.site_id,
-                    monitor: service.id,
+                    site_id: service.site_id,
+                    monitor_id: service.id,
                 });
             }
         });
