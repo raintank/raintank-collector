@@ -208,7 +208,7 @@ function respond(metrics, callback) {
     payload[1].values.push(metrics['dataLength']);
     if (metrics['dataLength'] > 0 && metrics['recv'] > 0) {
         payload[1].dsnames.push('throughput');
-        payload[1].values.push(metrics['dataLength']/metrics['recv']);
+        payload[1].values.push(metrics['dataLength']/(metrics['recv']/1000));
     }
      
     payload[2].values.push(metrics['statusCode']);
