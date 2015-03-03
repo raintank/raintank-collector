@@ -1,5 +1,5 @@
 'use strict;'
-var config = require('./config').cnf();
+var config = require('./config').config;
 var util = require('util');
 var checks = require('./checks');
 var zlib = require('zlib');

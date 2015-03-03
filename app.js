@@ -1,5 +1,5 @@
 'use strict;'
-var config = require('./config').cnf();
+var config = require('./config').config;
 var cluster = require('cluster');
 var serviceManager = require('./serviceManager');
 

@@ -17,17 +17,26 @@ Install all of the dependent node_modules
 npm install
 ```
 
-Update the config.js with the location definition of where the collector is running and add the URL and access token of the raintank-collector-ctrl service.
+Update the config/config.json with the location definition of where the collector is running and add the URL and access token of the raintank-collector-ctrl service.
 ```
-config.location = {
-    "id": "DEV1",
-    "name": "Development",
-    "region": "AMER",
-    "country": "US",
-    "provider": "Docker"
-};
-config.serverUrl = "http://raintank-collector-ctrl:8181";
-config.adminToken = "jk832sjksf9asdkvnngddfg8sfk";
+{
+	"location": {
+		"name": "PublicTest",
+	    "region": "APAC",
+	    "country": "SG",
+	    "provider": "Desktop",
+	    "public": true
+	},
+	"numCPUs": 2,
+	"serverUrl": "http://collector-ctrl:8181",
+	"token": "eyJrIjoiWmZLTktlNHJ0UFFBdWtVdkRyemNiMjZPNFpralA1M3kiLCJuIjoiY29sbGVjdG9yIiwiaWQiOjF9",
+	"api": {
+		"host": "grafana",
+		"port": "3000",
+		"path": "/api/",
+		"protocol": "http"
+	}
+}
 ```
 
 Then start the app.
