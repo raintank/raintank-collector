@@ -217,6 +217,11 @@ function respond(metrics, callback) {
         metrics['dataLength'] = Math.round(metrics['dataLength'] * 100) / 100;
     }
     payload[1].values.push(metrics['dataLength']);
+    if (metrics['dataLength'] > 0 && metrics['recv'] > 0) {
+        payload[1].dsnames.push('throughput');
+        payload[1].values.push(metrics['dataLength']/metrics['recv']);
+    }
+     
     payload[2].values.push(metrics['statusCode']);
 
     callback(null, {success: true, results: payload, error: metrics.error});
