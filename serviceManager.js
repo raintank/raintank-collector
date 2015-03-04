@@ -92,7 +92,7 @@ exports.init = init;
 
 function serviceUpdate(payload) {
     var service = JSON.parse(payload);
-    service.updated = new Date(service.timestamp);
+    service.updated = new Date(service.updated);
 
     currentService = serviceCache[service.id] || service;
     console.log("got serviceUpdate message for service: %s", service.id);
