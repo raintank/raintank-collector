@@ -1,0 +1,18 @@
+{
+	"location": {
+		"name": "PublicTest",
+	    "region": "APAC",
+	    "country": "SG",
+	    "provider": "Desktop",
+	    "public": true
+	},
+	"numCPUs": 2,
+	"serverUrl": "http://collector-ctrl:8181",
+	"token": "eyJrIjoiWmZLTktlNHJ0UFFBdWtVdkRyemNiMjZPNFpralA1M3kiLCJuIjoiY29sbGVjdG9yIiwiaWQiOjF9",
+	"api": {
+		"host": "grafana",
+		"port": "3000",
+		"path": "/api/",
+		"protocol": "http"
+	}
+}
