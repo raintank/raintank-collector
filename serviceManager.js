@@ -92,6 +92,7 @@ exports.init = init;
 
 function serviceUpdate(payload) {
     var service = JSON.parse(payload);
+    console.log(service);
     service.updated = new Date(service.updated);
 
     currentService = serviceCache[service.id] || service;
@@ -113,6 +114,9 @@ function serviceUpdate(payload) {
             service.reschedule = true;
         }
         serviceCache[service.id] = service;
+    } else {
+        console.log("Service to update is newer then what was provided." );
+        console.log("%s\n%s", service.updated, currentService.updated);
     }
 }
 
@@ -189,10 +193,9 @@ function run(serviceId) {
                         metric.dsnames.forEach(function(dsname) {
                             BUFFER.push({
                                 name: util.format(
-                                    "%s.%s.%s.%s.%s",
+                                    "%s.%s.%s.%s",
                                     service.namespace,
                                     type,
-                                    service.slug,
                                     config.location.slug,
                                     dsname
                                 ),
@@ -204,7 +207,7 @@ function run(serviceId) {
                                 target_type: metric.target_type,
                                 value: metric.values[pos],
                                 time: timestamp/1000,
-                                site_id: service.site_id,
+                                endpoint_id: service.endpoint_id,
                                 monitor_id: service.id,
                             });
                             pos++;
@@ -219,9 +222,9 @@ function run(serviceId) {
                         source: "network_collector",
                         event_type: "monitor_state",
                         org_id: service.org_id,
-                        site_id: service.site_id,
+                        endpoint_id: service.endpoint_id,
                         location: config.location.slug,
-                        monitor: service.slug,
+                        monitor_id: service.id,
                         severity: 'ERROR',
                         message: response.error,
                         timestamp: timestamp
@@ -243,9 +246,9 @@ function run(serviceId) {
                         source: "network_collector",
                         event_type: "monitor_state",
                         org_id: service.org_id,
-                        site_id: service.site_id,
+                        endpoint_id: service.endpoint_id,
                         location: config.location.slug,
-                        monitor: service.slug,
+                        monitor_id: service.id,
                         severity: 'OK',
                         message: "Monitor now OK.",
                         timestamp: timestamp
@@ -261,8 +264,8 @@ function run(serviceId) {
                     });
                 }
                 service.state = serviceState;
-                var metricName = util.format("%s.%s.%s.%s.state",
-                                    service.namespace, type, service.slug, config.location.slug);
+                var metricName = util.format("%s.%s.%s.state",
+                                    service.namespace, type, config.location.slug);
                 BUFFER.push({
                     name: metricName,
                     org_id: service.org_id,
@@ -273,7 +276,7 @@ function run(serviceId) {
                     target_type: "gauge",
                     value: serviceState,
                     time: timestamp/1000,
-                    site_id: service.site_id,
+                    endpoint_id: service.endpoint_id,
                     monitor_id: service.id,
                 });
             }
