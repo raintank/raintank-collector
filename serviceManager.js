@@ -4,6 +4,7 @@ var util = require('util');
 var checks = require('./checks');
 var zlib = require('zlib');
 var ApiClient = require("./raintank-api-client");
+var querystring = require("querystring");
 
 var io = require('socket.io-client')
 serviceCache = {};
@@ -37,7 +38,7 @@ var init = function() {
     if (config.serverUrl.indexOf('https://') == 0) {
         secure = true;
     }
-    socket = io(util.format("%s?token=%s", config.serverUrl, config.token), {transports: ["websocket"], secure: secure});
+    socket = io(util.format("%s?token=%s", config.serverUrl, querystring.escape(config.token)), {transports: ["websocket"], secure: secure});
 
     socket.on('connect', function(){
         console.log('connected');
