@@ -42,7 +42,7 @@ var init = function() {
 
     socket.on('connect', function(){
         console.log('connected');
-        socket.emit('register', config.location);
+        socket.emit('register', config.collector);
     });
 
     socket.on('refresh', function(data){
@@ -122,7 +122,7 @@ function serviceUpdate(payload) {
 }
 
 function serviceRefresh(payload) {
-    config.location = payload.location;
+    config.collector = payload.collector;
     console.log("PID%s: refreshing service list: count: %s", process.pid, payload.services.length);
     var seen = {};
     payload.services.forEach(function(service) {
@@ -188,7 +188,7 @@ function run(serviceId) {
                 //console.log(metrics);
                 if (metrics) {
                     metrics.forEach(function(metric) {
-                        metric.location = config.location.id;
+                        metric.collector = config.collector.id;
                         metric.interval = service.frequency;
                         var pos = 0;
                         metric.dsnames.forEach(function(dsname) {
@@ -197,11 +197,11 @@ function run(serviceId) {
                                     "%s.%s.%s.%s",
                                     service.namespace,
                                     type,
-                                    config.location.slug,
+                                    config.collector.slug,
                                     dsname
                                 ),
                                 org_id: service.org_id,
-                                location: config.location.slug,
+                                collector: config.collector.slug,
                                 metric: util.format("network.%s.%s", type, dsname),
                                 interval: service.frequency,
                                 unit: metric.unit,
@@ -224,7 +224,7 @@ function run(serviceId) {
                         event_type: "monitor_state",
                         org_id: service.org_id,
                         endpoint_id: service.endpoint_id,
-                        location: config.location.slug,
+                        collector: config.collector.slug,
                         monitor_id: service.id,
                         severity: 'ERROR',
                         message: response.error,
@@ -248,7 +248,7 @@ function run(serviceId) {
                         event_type: "monitor_state",
                         org_id: service.org_id,
                         endpoint_id: service.endpoint_id,
-                        location: config.location.slug,
+                        collector: config.collector.slug,
                         monitor_id: service.id,
                         severity: 'OK',
                         message: "Monitor now OK.",
@@ -266,11 +266,11 @@ function run(serviceId) {
                 }
                 service.state = serviceState;
                 var metricName = util.format("%s.%s.%s.state",
-                                    service.namespace, type, config.location.slug);
+                                    service.namespace, type, config.collector.slug);
                 BUFFER.push({
                     name: metricName,
                     org_id: service.org_id,
-                    location: config.location.slug,
+                    collector: config.collector.slug,
                     metric: util.format("network.%s.%s", type, "state"),
                     interval: service.frequency,
                     unit: "state",

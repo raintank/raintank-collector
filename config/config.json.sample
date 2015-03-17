@@ -1,9 +1,6 @@
 {
-	"location": {
+	"collector": {
 		"name": "PublicTest",
-	    "region": "APAC",
-	    "country": "SG",
-	    "provider": "Desktop",
 	    "public": true
 	},
 	"numCPUs": 2,
