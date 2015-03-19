@@ -26,6 +26,7 @@ exports.execute = function(payload, callback) {
 		min: null,
 		max: null,
 		avg: null,
+		mean: null,
 		mdev: null,
 	};
 	var startTime = new Date();
@@ -52,7 +53,7 @@ exports.execute = function(payload, callback) {
 			    });
 		    });
 		}
-		async.series(pings, function(error, results) {
+		async.parallel(pings, function(error, results) {
 			complete = true;
 			
 			session.close();
@@ -69,6 +70,7 @@ exports.execute = function(payload, callback) {
 			var tsum2 = 0;
 			var min = null;
 			var max = null;
+			var successfulResults = [];
 			results.forEach(function(result) {
 				if ('ms' in result) {
 					if (max == null || result.ms > max) {
@@ -79,6 +81,7 @@ exports.execute = function(payload, callback) {
 					}
 					tsum += result.ms;
 					tsum2 += (result.ms * result.ms);
+					successfulResults.push(result.ms);
 				} else {
 					failCount++;
 				}
@@ -89,6 +92,10 @@ exports.execute = function(payload, callback) {
 			if (successCount > 0) {
 				profile.avg = tsum/successCount;
 				profile.mdev = Math.sqrt((tsum2/successCount) - ((tsum/successCount) *(tsum/successCount)));
+			}
+			if (successfulResults.length > 0) {
+				successfulResults.sort();
+				profile.mean = successfulResults[Math.floor(successfulResults.length/2)];
 			}
 			if (failCount == 0) {
 				profile.loss = 0;
@@ -117,7 +124,7 @@ function respond(metrics, callback) {
         values: [metrics.loss],
         time: metrics.startTime
     }];
-    ['dns','min','max','avg', 'mdev'].forEach(function(m) {
+    ['dns','min','max','avg','mean', 'mdev'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
             metrics[m] = metrics[m] = Math.round(metrics[m] * 100) / 100;
         }
