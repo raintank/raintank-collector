@@ -1,27 +1,11 @@
 'use strict';
-var ping = require('net-ping');
 var dns = require('dns');
-var async = require('async');
+var spawn = require('child_process').spawn;
 
 var COUNT = 5;
-var sessionID = 1;
 
 exports.execute = function(payload, callback) {
-	var sid = sessionID++;
-	if (sessionID > 65000) {
-		sessionID = 1;
-	}
-	var session = ping.createSession ({retries: 0, sessionId: sid});
-	var complete = false;
-	session.on("close", function() {
-		if (! complete) {
-			console.log("PING session-%s closed early. recreating it.", sid);
-			session = ping.createSession({retries: 0, sessionId: sid});
-		}
-	});
-	var results = [];
 	var profile = {
-		dns: null,
 		loss: null,
 		min: null,
 		max: null,
@@ -29,9 +13,6 @@ exports.execute = function(payload, callback) {
 		mean: null,
 		mdev: null,
 	};
-	var startTime = new Date();
-    profile.startTime = startTime.getTime()/1000;
-    var step = startTime;
 	dns.lookup(payload.hostname, 4, function(err, address, family) {
         if (err) {
             console.log(err);
@@ -39,31 +20,15 @@ exports.execute = function(payload, callback) {
             respond(profile, callback);
             return;
         }
-        var dnsTime = new Date();
-        profile.dns = dnsTime.getTime() - step.getTime();
-        var pings = [];
-		for (var i = 0; i < COUNT; i++) {
-			pings.push(function(cb) {
-			    session.pingHost(address, function (error, target, sent, rcvd) {
-			        if (! error) {
-			            cb(null, {ms: (rcvd - sent)}); 
-			        } else {
-			        	cb(null, {error: error});
-			        }
-			    });
-		    });
-		}
-		async.parallel(pings, function(error, results) {
-			complete = true;
-			
-			session.close();
-			if (error) {
-				console.log("error received when performing pings.");
-				console.log(error);
-				complete = true;
-			 	res.json(500, error);
-			 	return;
-			}
+        var child = spawn("fping", ["-C", ""+COUNT,, "-q", address ]);
+        var output = '';
+        child.stderr.on('data', function(data) {
+        	output += data;
+        });
+        child.on("close", function(code) {
+        	output = output.trim();
+        	//207.99.5.164 : 698.83 445.50 718.78 466.50 -
+        	var results = output.split(' ').slice(2);
 			var failCount = 0;
 			var totalCount = results.length;
 			var tsum = 0;
@@ -72,18 +37,19 @@ exports.execute = function(payload, callback) {
 			var max = null;
 			var successfulResults = [];
 			results.forEach(function(result) {
-				if ('ms' in result) {
-					if (max == null || result.ms > max) {
-						max = result.ms;
-					}
-					if (min == null || result.ms < min) {
-						min = result.ms;
-					}
-					tsum += result.ms;
-					tsum2 += (result.ms * result.ms);
-					successfulResults.push(result.ms);
-				} else {
+				if (isNaN(result)) {
 					failCount++;
+				} else {
+					result = parseFloat(result);
+					if (max == null || result > max) {
+						max = result;
+					}
+					if (min == null || result < min) {
+						min = result;
+					}
+					tsum += result;
+					tsum2 += (result * result);
+					successfulResults.push(result);
 				}
 			});
 			profile.min = min;
@@ -124,7 +90,7 @@ function respond(metrics, callback) {
         values: [metrics.loss],
         time: metrics.startTime
     }];
-    ['dns','min','max','avg','mean', 'mdev'].forEach(function(m) {
+    ['min','max','avg','mean', 'mdev'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
             metrics[m] = metrics[m] = Math.round(metrics[m] * 100) / 100;
         }
