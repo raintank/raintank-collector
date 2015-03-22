@@ -20,7 +20,7 @@ exports.execute = function(payload, callback) {
             respond(profile, callback);
             return;
         }
-        var child = spawn("fping", ["-C", ""+COUNT,, "-q", address ]);
+        var child = spawn("fping", ["-C", ""+COUNT, "-q", address ]);
         var output = '';
         child.stderr.on('data', function(data) {
         	output += data;
