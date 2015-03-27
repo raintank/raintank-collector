@@ -192,17 +192,17 @@ function run(serviceId) {
                         metric.interval = service.frequency;
                         var pos = 0;
                         metric.dsnames.forEach(function(dsname) {
+                            metric_name = util.format("network.%s.%s", type, dsname);
                             BUFFER.push({
                                 name: util.format(
-                                    "%s.%s.%s.%s",
+                                    "%s.%s.%s",
                                     service.namespace,
-                                    type,
                                     config.collector.slug,
-                                    dsname
+                                    metric_name
                                 ),
                                 org_id: service.org_id,
                                 collector: config.collector.slug,
-                                metric: util.format("network.%s.%s", type, dsname),
+                                metric: metric_name,
                                 interval: service.frequency,
                                 unit: metric.unit,
                                 target_type: metric.target_type,
@@ -265,13 +265,13 @@ function run(serviceId) {
                     });
                 }
                 service.state = serviceState;
-                var metricName = util.format("%s.%s.%s.state",
-                                    service.namespace, type, config.collector.slug);
+                var metricName = util.format("network.%s.%s", type, "state");
+
                 BUFFER.push({
-                    name: metricName,
+                    name: util.format("%s.%s.%s", service.namespace, config.collector.slug, metricName),
                     org_id: service.org_id,
                     collector: config.collector.slug,
-                    metric: util.format("network.%s.%s", type, "state"),
+                    metric: metricName,
                     interval: service.frequency,
                     unit: "state",
                     target_type: "gauge",
