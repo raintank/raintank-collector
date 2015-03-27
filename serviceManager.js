@@ -265,21 +265,28 @@ function run(serviceId) {
                     });
                 }
                 service.state = serviceState;
-                var metricName = util.format("network.%s.%s", type, "state");
-
-                BUFFER.push({
-                    name: util.format("%s.%s.%s", service.namespace, config.collector.slug, metricName),
-                    org_id: service.org_id,
-                    collector: config.collector.slug,
-                    metric: metricName,
-                    interval: service.frequency,
-                    unit: "state",
-                    target_type: "gauge",
-                    value: serviceState,
-                    time: timestamp/1000,
-                    endpoint_id: service.endpoint_id,
-                    monitor_id: service.id,
-                });
+                var states = ["ok", "warn", 'error'];
+                for (var state=0; state < states.length; state++) {
+                    var metricName = util.format("network.%s.%s_state", type, states[state]);
+                    var active = 0;
+                    if (state == serviceState) {
+                        active = 1;
+                    }
+                    BUFFER.push({
+                        name: util.format("%s.%s.%s", service.namespace, config.collector.slug, metricName),
+                        org_id: service.org_id,
+                        collector: config.collector.slug,
+                        metric: metricName,
+                        interval: service.frequency,
+                        unit: "state",
+                        target_type: "gauge",
+                        value: active,
+                        time: timestamp/1000,
+                        endpoint_id: service.endpoint_id,
+                        monitor_id: service.id,
+                    });
+                }
+                
             }
         });
     }
