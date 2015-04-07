@@ -38,7 +38,7 @@ var init = function() {
     if (config.serverUrl.indexOf('https://') == 0) {
         secure = true;
     }
-    socket = io(util.format("%s?token=%s", config.serverUrl, querystring.escape(config.token)), {transports: ["websocket"], secure: secure});
+    socket = io(util.format("%s?token=%s", config.serverUrl, querystring.escape(config.token)), {transports: ["polling"], secure: secure});
 
     socket.on('connect', function(){
         console.log('connected');
@@ -86,7 +86,7 @@ var init = function() {
             }
             socket.emit('results', buffer);
         });
-    }, 100);
+    }, 1000);
 }
 
 exports.init = init;
@@ -218,7 +218,7 @@ function run(serviceId) {
                 var serviceState = 0;
                 if (response.error ) {
                     console.log("error in check. sending event.")
-                    serviceState = 1;
+                    serviceState = 2;
                     var eventPayload = {
                         source: "network_collector",
                         event_type: "monitor_state",
