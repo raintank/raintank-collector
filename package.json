@@ -9,6 +9,7 @@
     "cluster": "*",
     "native-dns": "*",
     "net-snmp": "*",
-    "socket.io-client": "*"
+    "socket.io-client": "*",
+    "log4js": "*"
   }
 }

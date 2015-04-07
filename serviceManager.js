@@ -5,6 +5,8 @@ var checks = require('./checks');
 var zlib = require('zlib');
 var ApiClient = require("./raintank-api-client");
 var querystring = require("querystring");
+var log4js = require('log4js');
+var logger = log4js.getLogger('PID:'+process.pid);
 
 var io = require('socket.io-client')
 serviceCache = {};
@@ -26,8 +28,7 @@ var init = function() {
 
     apiClient.get('monitor_types', function(err, res) {
         if (err) {
-            console.log("failed to get monitor_types");
-            console.log(err);
+            logger.fatal("failed to get monitor_types. ", err);
             return process.exit(1);
         }
         res.data.forEach(function(type) {
@@ -41,7 +42,7 @@ var init = function() {
     socket = io(util.format("%s?token=%s", config.serverUrl, querystring.escape(config.token)), {transports: ["polling"], secure: secure});
 
     socket.on('connect', function(){
-        console.log('connected');
+        logger.info('connected to socket.io server');
         socket.emit('register', config.collector);
     });
 
@@ -62,15 +63,14 @@ var init = function() {
     });
 
     socket.on('connect_error', function(err) {
-        console.log("serviceManager connection error");
-        console.log(err);
+        logger.error("serviceManager connection error. ", err);
     });
 
     socket.on('disconnect', function(){
-        console.log("serviceManager disconnected");
+        logger.info("disconnected from socket.io server.");
     });
     setInterval(function() {
-        console.log("Processing %s metrics/second %s checks", metricCount/10, Object.keys(serviceCache).length);
+        logger.debug("Processing %s metrics/second %s checks", metricCount/10, Object.keys(serviceCache).length);
         metricCount = 0;
     }, 10000);
 
@@ -80,8 +80,7 @@ var init = function() {
         metricCount = metricCount + payload.length;
         compress(payload, function(err, buffer) {
             if (err) {
-                console.log("Error compressing payload.");
-                console.log(err);
+                logger.error("Error compressing payload.", err);
                 return;
             }
             socket.emit('results', buffer);
@@ -93,7 +92,6 @@ exports.init = init;
 
 function serviceUpdate(payload) {
     var service = JSON.parse(payload);
-    console.log(service);
     service.updated = new Date(service.updated);
 
     currentService = serviceCache[service.id] || service;
@@ -103,7 +101,7 @@ function serviceUpdate(payload) {
         service.state = currentService.state;
 
         if (!('timer' in currentService)) {
-            console.log("%s scheduling new service", process.pid);
+            logger.debug("scheduling new service", process.pid);
             service.timer = setInterval(function() { run(service.id);}, service.frequency*1000);
         } else {
             service.timer = currentService.timer;
@@ -116,14 +114,14 @@ function serviceUpdate(payload) {
         }
         serviceCache[service.id] = service;
     } else {
-        console.log("Service to update is newer then what was provided." );
-        console.log("%s\n%s", service.updated, currentService.updated);
+        logger.error("Service to update is newer then what was provided." );
+        logger.error("%s\n%s", service.updated, currentService.updated);
     }
 }
 
 function serviceRefresh(payload) {
     config.collector = payload.collector;
-    console.log("PID%s: refreshing service list: count: %s", process.pid, payload.services.length);
+    logger.debug("refreshing checks: check count: %s", process.pid, payload.services.length);
     var seen = {};
     payload.services.forEach(function(service) {
         service.updated = new Date(service.updated);
@@ -132,10 +130,12 @@ function serviceRefresh(payload) {
             newService = false;
             if (!(service.id in serviceCache)) {
                 newService = true;
-            } else if (service.offset != serviceCache[service.id].offset) {
-                service.reschedule = true;
-            } else if (service.frequency != serviceCache[service.id].frequency) {
-                service.reschedule = true;
+            } else {
+                service.state = serviceCache[service.id].state;
+                service.timer = serviceCache[service.id].timer;
+                if ((service.offset != serviceCache[service.id].offset) || (service.frequency != serviceCache[service.id].frequency)) {
+                    service.reschedule = true;
+                }
             }
             serviceCache[service.id] = service;
             if (newService) {
@@ -146,20 +146,23 @@ function serviceRefresh(payload) {
     });
     Object.keys(serviceCache).forEach(function(id) {
         if (!(id in seen)) {
-            clearInterval(serviceCache[id].timer);
-            delete serviceCache[id];
+            _checkDelete(id);
         }
     });
+}
+
+function _checkDelete(id) {
+    logger.debug("removing check %s from run queue", id);
+    if ('timer' in serviceCache[id]) {
+        clearInterval(serviceCache[id].timer);
+    }
+    delete serviceCache[id];
 }
 
 function serviceDelete(payload) {
     var service = JSON.parse(payload);
     if (service.id in serviceCache) {
-        console.log("removing monitor %s", service.id);
-        if ('timer' in serviceCache[service.id]) {
-            clearInterval(serviceCache[service.id].timer);
-        }
-        delete serviceCache[service.id];
+        _checkDelete(service.id);
     }
 }
 
@@ -217,7 +220,7 @@ function run(serviceId) {
                 }
                 var serviceState = 0;
                 if (response.error ) {
-                    console.log("error in check. sending event.")
+                    logger.debug("error in check %s. sending event.", service.id)
                     serviceState = 2;
                     var eventPayload = {
                         source: "network_collector",
@@ -233,8 +236,7 @@ function run(serviceId) {
                     //console.log(eventPayload);
                     compress(eventPayload, function(err, buffer) {
                         if (err) {
-                            console.log("Error compressing payload.");
-                            console.log(err);
+                            logger.error("Error compressing payload.", err);
                             return;
                         }
                         socket.emit('event', buffer);
@@ -242,7 +244,8 @@ function run(serviceId) {
                     
                 }
                 
-                if (serviceState == 0 && service.state != 0) {
+                if (serviceState === 0 && service.state !== 0) {
+                    logger.debug("check %s state transitioned from %s to %s", service.id, service.state, serviceState);
                     var eventPayload = {
                         source: "network_collector",
                         event_type: "monitor_state",
@@ -257,8 +260,7 @@ function run(serviceId) {
                     //console.log(eventPayload);
                     compress(eventPayload, function(err, buffer) {
                         if (err) {
-                            console.log("Error compressing payload.");
-                            console.log(err);
+                            logger.error("Error compressing payload.", err);
                             return;
                         }
                         socket.emit('event', buffer);
