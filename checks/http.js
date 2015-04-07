@@ -67,12 +67,10 @@ exports.execute = function(payload, callback) {
 
     var timeoutId = setTimeout(function() {
         timedout = true;
-        var endTime = process.hrtime();
         if (request) {
             request.abort();
         }
         metrics.error = "timed out after " + payload.timeout + " seconds.";
-        metrics.total += timeDiff(endTime, step);
         return respond(metrics, callback);
     }, payload.timeout * 1000);
 
