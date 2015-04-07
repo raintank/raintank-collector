@@ -8,7 +8,7 @@ The results of each test are then transfered back to the raintank-collector-ctrl
 
 Clone the repository
 ```
-git clone <this_repo>
+git clone https://github.com/raintank/raintank-collector.git
 ```
 
 Install all of the dependent node_modules
@@ -17,24 +17,21 @@ Install all of the dependent node_modules
 npm install
 ```
 
-Update the config/config.json with the location definition of where the collector is running and add the URL and access token of the raintank-collector-ctrl service.
+Create the config/config.json with the collector name and add the URL and access token of the raintank-collector-ctrl and API services.
+You can optionally include a list of 'tags' in the 'collector' configuration.  These tags will be added to the collector on creation only.
 ```
 {
-	"location": {
+	"collector": {
 		"name": "PublicTest",
-	    "region": "APAC",
-	    "country": "SG",
-	    "provider": "Desktop",
-	    "public": true
 	},
-	"numCPUs": 2,
-	"serverUrl": "http://collector-ctrl:8181",
-	"token": "eyJrIjoiWmZLTktlNHJ0UFFBdWtVdkRyemNiMjZPNFpralA1M3kiLCJuIjoiY29sbGVjdG9yIiwiaWQiOjF9",
+	"numCPUs": 1,
+	"serverUrl": "https://portal.raintank.io:8443",
+	"token": "<Your API KEY>",
 	"api": {
-		"host": "grafana",
-		"port": "3000",
+		"host": "portal.raintank.io",
+		"port": "443",
 		"path": "/api/",
-		"protocol": "http"
+		"protocol": "https"
 	}
 }
 ```
