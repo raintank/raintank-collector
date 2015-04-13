@@ -98,7 +98,7 @@ function serviceUpdate(payload) {
     console.log("got serviceUpdate message for service: %s", service.id);
     if (service.updated >= currentService.updated) {
         service.reschedule = false;
-        service.state = currentService.state;
+        service.localState = currentService.state;
 
         if (!('timer' in currentService)) {
             logger.debug("scheduling new service", process.pid);
@@ -131,7 +131,7 @@ function serviceRefresh(payload) {
             if (!(service.id in serviceCache)) {
                 newService = true;
             } else {
-                service.state = serviceCache[service.id].state;
+                service.localState = serviceCache[service.id].localState;
                 service.timer = serviceCache[service.id].timer;
                 if ((service.offset != serviceCache[service.id].offset) || (service.frequency != serviceCache[service.id].frequency)) {
                     service.reschedule = true;
@@ -245,8 +245,8 @@ function run(serviceId) {
                     
                 }
                 
-                if (serviceState === 0 && service.state !== 0) {
-                    logger.debug("check %s state transitioned from %s to %s", service.id, service.state, serviceState);
+                if (serviceState === 0 && service.localState !== 0) {
+                    logger.debug("check %s state transitioned from %s to %s", service.id, service.localState, serviceState);
                     var eventPayload = {
                         source: "network_collector",
                         event_type: "monitor_state",
@@ -268,7 +268,7 @@ function run(serviceId) {
                         socket.emit('event', buffer);
                     });
                 }
-                service.state = serviceState;
+                service.localState = serviceState;
                 var states = ["ok", "warn", 'error'];
                 for (var state=0; state < states.length; state++) {
                     var metricName = util.format("network.%s.%s_state", type, states[state]);
