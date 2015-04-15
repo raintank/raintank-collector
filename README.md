@@ -17,22 +17,15 @@ Install all of the dependent node_modules
 npm install
 ```
 
-Create the config/config.json with the collector name and add the URL and access token of the raintank-collector-ctrl and API services.
-You can optionally include a list of 'tags' in the 'collector' configuration.  These tags will be added to the collector on creation only.
+Create the config/config.json with the collector name and add the URL and access token of the API service.
 ```
 {
 	"collector": {
 		"name": "PublicTest",
 	},
 	"numCPUs": 1,
-	"serverUrl": "https://portal.raintank.io:8443",
-	"token": "<Your API KEY>",
-	"api": {
-		"host": "portal.raintank.io",
-		"port": "443",
-		"path": "/api/",
-		"protocol": "https"
-	}
+	"serverUrl": "https://portal.raintank.io",
+	"apiKey": "<Your API KEY>",
 }
 ```
 
