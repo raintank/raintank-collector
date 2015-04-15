@@ -5,19 +5,22 @@ var http = require('http'),
 	util = require("util"),
 	zlib = require("zlib"),
 	querystring = require("querystring");
+var url = require('url');
 
 module.exports = Client;
 var protocol;
 
 // Client Class
 function Client(options) {
-	this.host = options.host || '127.0.0.1';
-	this.port = options.port || 80;
+	var server = url.parse(options.url)
 
-	this.base = options.base || '/';
-	this.token = options.token;
+	this.host = server.hostname || '127.0.0.1';
+	this.port = server.port || 80;
+
+	this.base = options.base || '/api/';
+	this.token = options.apiKey;
 	this.max_concurrency = options.max_concurrency || 10;
-	this.protocol = options.proto || 'http';
+	this.protocol = server.protocol || 'http';
 	protocol = (this.protocol === 'https') ? https : http;
 	protocol.globalAgent.maxSockets = this.max_concurrency;
 }

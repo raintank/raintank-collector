@@ -7,22 +7,15 @@ var ApiClient = require("./raintank-api-client");
 var querystring = require("querystring");
 var log4js = require('log4js');
 var logger = log4js.getLogger('PID:'+process.pid);
-
 var io = require('socket.io-client')
-serviceCache = {};
+
+var serviceCache = {};
 var socket;
 var metricCount = 0;
 var BUFFER = [];
-
+var ready = false;
 var monitorTypes = {};
-var apiClient = new ApiClient({
-    host: config.api.host,
-    port: config.api.port,
-    base: config.api.path,
-    proto: config.api.protocol || "http",
-});
-apiClient.setToken(config.token);
-
+var apiClient = new ApiClient({url: config.serverUrl, apiKey: config.apiKey});
 
 var init = function() {
 
@@ -39,11 +32,20 @@ var init = function() {
     if (config.serverUrl.indexOf('https://') == 0) {
         secure = true;
     }
-    socket = io(util.format("%s?token=%s", config.serverUrl, querystring.escape(config.token)), {transports: ["polling"], secure: secure});
+    socket = io(util.format("%s?&apiKey=%s&name=%s", config.serverUrl, querystring.escape(config.apiKey), querystring.escape(config.collector.name)), {transports: ["websocket"], secure: secure, forceNew: true});
 
     socket.on('connect', function(){
         logger.info('connected to socket.io server');
-        socket.emit('register', config.collector);
+    });
+
+    socket.on("ready", function(collector) {
+        config.collector = collector;
+        ready = true;
+    });
+
+    socket.on('authFailed', function(reason) {
+        logger.error("connection to controller failed.", reason);
+        socket.disconnect();
     });
 
     socket.on('refresh', function(data){
@@ -67,6 +69,7 @@ var init = function() {
     });
 
     socket.on('disconnect', function(){
+        ready = false;
         logger.info("disconnected from socket.io server.");
     });
     setInterval(function() {
@@ -75,6 +78,12 @@ var init = function() {
     }, 10000);
 
     setInterval(function() {
+        if (!ready) {
+            return;
+        }
+        if (BUFFER.length == 0) {
+            return;
+        }
         var payload = BUFFER;
         BUFFER = [];
         metricCount = metricCount + payload.length;
@@ -90,8 +99,7 @@ var init = function() {
 
 exports.init = init;
 
-function serviceUpdate(payload) {
-    var service = JSON.parse(payload);
+function serviceUpdate(service) {
     service.updated = new Date(service.updated);
 
     currentService = serviceCache[service.id] || service;
@@ -120,10 +128,9 @@ function serviceUpdate(payload) {
 }
 
 function serviceRefresh(payload) {
-    config.collector = payload.collector;
-    logger.debug("refreshing checks: check count: %s", process.pid, payload.services.length);
+    logger.debug("refreshing checks: check count: %s", payload.length);
     var seen = {};
-    payload.services.forEach(function(service) {
+    payload.forEach(function(service) {
         service.updated = new Date(service.updated);
         if (!(service.id in serviceCache) || service.updated >= serviceCache[service.id].updated) {
             service.reschedule = false;
@@ -159,8 +166,7 @@ function _checkDelete(id) {
     delete serviceCache[id];
 }
 
-function serviceDelete(payload) {
-    var service = JSON.parse(payload);
+function serviceDelete(service) {
     if (service.id in serviceCache) {
         _checkDelete(service.id);
     }
@@ -195,6 +201,9 @@ function run(serviceId) {
                         metric.interval = service.frequency;
                         var pos = 0;
                         metric.dsnames.forEach(function(dsname) {
+                            if (metric.values[pos] === null || isNaN(metric.values[pos])) {
+                                return;
+                            }
                             metric_name = util.format("network.%s.%s", type, dsname);
                             BUFFER.push({
                                 name: util.format(
@@ -297,8 +306,10 @@ function run(serviceId) {
 }
 
 function compress(payload, cb) {
-    var data = new Buffer(JSON.stringify(payload));
+    /*var data = new Buffer(JSON.stringify(payload));
     zlib.deflate(data, cb);
+    */
+    cb(null, payload);
 }
 
 function reschedule(serviceId) {
