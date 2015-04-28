@@ -13,16 +13,18 @@ var protocol;
 // Client Class
 function Client(options) {
 	var server = url.parse(options.url)
-
+	var default_ports = {"http:": 80, "https:": 443};
 	this.host = server.hostname || '127.0.0.1';
-	this.port = server.port || 80;
 
 	this.base = options.base || '/api/';
 	this.token = options.apiKey;
 	this.max_concurrency = options.max_concurrency || 10;
 	this.protocol = server.protocol || 'http';
-	protocol = (this.protocol === 'https') ? https : http;
+	this.port = server.port || default_ports[this.protocol];
+
+	protocol = (this.protocol === 'https:') ? https : http;
 	protocol.globalAgent.maxSockets = this.max_concurrency;
+
 }
 
 Client.prototype.setToken = function(token) {
@@ -64,24 +66,24 @@ Client.prototype.request = function(method, path, data, callback) {
 			var buffer = Buffer.concat(raw);
 			//handle compression
 			if ('content-encoding' in res.headers && res.headers['content-encoding'] == 'gzip') {
-                //handle gziped data.
-                zlib.gunzip(buffer, function(error, decoded) {
-                	if (error) {
-                		return callback(new Error('could not decompress response.'), res);
-                	}
-                	res.data = JSON.parse(decoded);
-                });
-            } else {
+				//handle gziped data.
+				zlib.gunzip(buffer, function(error, decoded) {
+					if (error) {
+						return callback(new Error('could not decompress response.'), res);
+					}
+					res.data = JSON.parse(decoded);
+				});
+			} else {
 
-            }
-            var error, obj = marshal(buffer.toString(), function(error, obj) {
-            	 if (error) {
-            		err = new Error("failed to parse response body.");
-	            } else {
-	            	res.data = obj;
-	            }
+			}
+			var error, obj = marshal(buffer.toString(), function(error, obj) {
+				 if (error) {
+					err = new Error("failed to parse response body.");
+				} else {
+					res.data = obj;
+				}
 				callback(err, res);
-            });
+			});
 		})
 		
 	});
