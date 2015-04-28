@@ -2,35 +2,39 @@
 Raintank Remote Collector Agent
 
 The raintank-collector provides the execution of periodic network performance tests including HTTP checks, DNS and Ping.
-The results of each test are then transfered back to the raintank-collector-ctrl app where they are processed and inserted into a timeseries database.
+The results of each test are then transfered back to the Raintank API where they are processed and inserted into a timeseries database.
 
-## building and running
+## To run your own private collector follow these steps.
 
-Clone the repository
-```
+1. Add the new collector via the raintank portal.
+  * navigate to the collectors page then click on the "New Collector" button at the top right of the screen.
+  * enter a unique name for the collector and click the "add" button.
+2. If you dont already have an apiKey, create a new one.
+  * Click on your user name in the left navigation menu, then click the ApiKeys submenu option.
+  * Enter the key name and click 'add'
+  * be sure to note down the key generated as you will need it for the collector configuration file.
+3. Install the collector application
+  * Clone the repository
+  ```
 git clone https://github.com/raintank/raintank-collector.git
-```
-
-Install all of the dependent node_modules
-
-```
+  ```
+  * Install all of the dependent node_modules
+  ```
 npm install
-```
-
-Create the config/config.json with the collector name and add the URL and access token of the API service.
-```
+  ```
+  * Install fping.  Installation depends on your linux distribution. http://fping.org/
+  * Create the config/config.json with the collector name created in step 1 and the ApiKey created in step 2.
+  ```
 {
 	"collector": {
 		"name": "PublicTest",
-	},
+},
 	"numCPUs": 1,
 	"serverUrl": "https://portal.raintank.io",
 	"apiKey": "<Your API KEY>",
 }
-```
-
-Then start the app.
-
-```
+  ```
+  * Then start the app.
+  ```
 nodejs app.js
-```
+  ```
