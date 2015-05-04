@@ -44,8 +44,20 @@ var init = function() {
     });
 
     socket.on('authFailed', function(reason) {
-        logger.error("connection to controller failed.", reason);
-        socket.disconnect();
+        logger.error("connection to controller failed.-", reason);
+        if (reason == "Collector not found") {
+            logger.info("creating new collector.");
+            var params = {
+                name: config.collector.name
+            };
+            apiClient.put('collectors', params, function(err, res) {
+                socket.disconnect();
+                return process.exit(1);
+            })   
+        } else {
+            socket.disconnect();
+            return process.exit(1);
+        }
     });
 
     socket.on('refresh', function(data){
