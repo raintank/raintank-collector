@@ -35,7 +35,7 @@ Client.prototype.buildRequestOptions = function(method, path) {
 	var headers = {
 		'Authorization': 'Bearer '+ this.token
 	}
-	if (method in ["PUT","POST"]) {
+	if (["PUT","POST"].indexOf(method) > -1) {
 		headers['Content-Type'] = "application/json"
 	}
 	return  {
