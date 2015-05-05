@@ -68,6 +68,9 @@ exports.execute = function(payload, callback) {
 			} else {
 				profile.loss = 100 * (failCount/totalCount);
 			}
+			if (profile.loss >= 100) {
+				profile.error = "100% packet loss.";
+			}
 			respond(profile, callback);
 		});
 	});
@@ -98,6 +101,7 @@ function respond(metrics, callback) {
         payload[0].values.push(metrics[m]);
         payload[0].time = metrics.startTime;
     });
-    callback(null, {success: true, results: payload});
+
+    callback(null, {success: true, results: payload, error: metrics.error});
 }
 
