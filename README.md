@@ -27,11 +27,11 @@ npm install
   ```
 {
 	"collector": {
-		"name": "PublicTest",
-},
+		"name": "PublicTest"
+	},
 	"numCPUs": 1,
 	"serverUrl": "https://portal.raintank.io",
-	"apiKey": "<Your API KEY>",
+	"apiKey": "<Your API KEY>"
 }
   ```
   * Then start the app.
