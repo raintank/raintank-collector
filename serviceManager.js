@@ -48,7 +48,8 @@ var init = function() {
         if (reason == "Collector not found") {
             logger.info("creating new collector.");
             var params = {
-                name: config.collector.name
+                name: config.collector.name,
+                enabled: true
             };
             apiClient.put('collectors', params, function(err, res) {
                 socket.disconnect();
