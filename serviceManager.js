@@ -116,7 +116,8 @@ function serviceUpdate(service) {
     service.updated = new Date(service.updated);
 
     currentService = serviceCache[service.id] || service;
-    console.log("got serviceUpdate message for service: %s", service.id);
+    logger.info("got serviceUpdate message for service: %s", service.id);
+    logger.debug(service);
     if (service.updated >= currentService.updated) {
         service.reschedule = false;
         service.localState = currentService.state;
@@ -221,7 +222,7 @@ function run(serviceId) {
                             BUFFER.push({
                                 name: util.format(
                                     "%s.%s.%s",
-                                    service.namespace,
+                                    service.endpoint_slug,
                                     config.collector.slug,
                                     metric_name
                                 ),
@@ -249,6 +250,7 @@ function run(serviceId) {
                         event_type: "monitor_state",
                         org_id: service.org_id,
                         endpoint_id: service.endpoint_id,
+			endpointt: service.endpoint_slug,
                         collector: config.collector.slug,
                         collector_id: config.collector.id,
                         monitor_id: service.id,
@@ -274,6 +276,7 @@ function run(serviceId) {
                         event_type: "monitor_state",
                         org_id: service.org_id,
                         endpoint_id: service.endpoint_id,
+			endpoint: service.endpoint_slug,
                         collector: config.collector.slug,
                         collector_id: config.collector.id,
                         monitor_id: service.id,
@@ -299,7 +302,7 @@ function run(serviceId) {
                         active = 1;
                     }
                     BUFFER.push({
-                        name: util.format("%s.%s.%s", service.namespace, config.collector.slug, metricName),
+                        name: util.format("%s.%s.%s", service.endpoint_slug, config.collector.slug, metricName),
                         org_id: service.org_id,
                         collector: config.collector.slug,
                         metric: metricName,
