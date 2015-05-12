@@ -254,6 +254,7 @@ function run(serviceId) {
                         collector: config.collector.slug,
                         collector_id: config.collector.id,
                         monitor_id: service.id,
+                        monitor_type: type,
                         severity: 'ERROR',
                         message: response.error,
                         timestamp: timestamp
@@ -280,6 +281,7 @@ function run(serviceId) {
                         collector: config.collector.slug,
                         collector_id: config.collector.id,
                         monitor_id: service.id,
+			monitor_type: type,
                         severity: 'OK',
                         message: "Monitor now OK.",
                         timestamp: timestamp
