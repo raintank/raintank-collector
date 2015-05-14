@@ -1,2 +1,2 @@
 #!/bin/sh
-fpm -s npm -t deb -S nodejs -S nodejs-legacy -S nodejs-dev -S npm .
+fpm -s npm -t deb -d nodejs -d nodejs-legacy -d nodejs-dev -d npm .
