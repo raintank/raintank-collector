@@ -250,7 +250,7 @@ function run(serviceId) {
                         event_type: "monitor_state",
                         org_id: service.org_id,
                         endpoint_id: service.endpoint_id,
-			endpointt: service.endpoint_slug,
+			endpoint: service.endpoint_slug,
                         collector: config.collector.slug,
                         collector_id: config.collector.id,
                         monitor_id: service.id,
