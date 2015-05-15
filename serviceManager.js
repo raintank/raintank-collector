@@ -54,7 +54,7 @@ var init = function() {
             apiClient.put('collectors', params, function(err, res) {
                 socket.disconnect();
                 return process.exit(1);
-            })   
+            })
         } else {
             socket.disconnect();
             return process.exit(1);
@@ -119,22 +119,16 @@ function serviceUpdate(service) {
     logger.info("got serviceUpdate message for service: %s", service.id);
     logger.debug(service);
     if (service.updated >= currentService.updated) {
-        service.reschedule = false;
         service.localState = currentService.state;
 
-        if (!('timer' in currentService)) {
-            logger.debug("scheduling new service", process.pid);
-            service.timer = setInterval(function() { run(service.id);}, service.frequency*1000);
-        } else {
+        if ('timer' in currentService) {
             service.timer = currentService.timer;
+        } else {
+            logger.debug("scheduling new service", service.id);
         }
 
-        if (service.offset != currentService.offset) {
-            service.reschedule = true;
-        } else if (service.frequency != currentService.frequency) {
-            service.reschedule = true;
-        }
         serviceCache[service.id] = service;
+        runNext(service.id);
     } else {
         logger.error("Service to update is newer then what was provided." );
         logger.error("%s\n%s", service.updated, currentService.updated);
@@ -147,21 +141,13 @@ function serviceRefresh(payload) {
     payload.forEach(function(service) {
         service.updated = new Date(service.updated);
         if (!(service.id in serviceCache) || service.updated >= serviceCache[service.id].updated) {
-            service.reschedule = false;
             newService = false;
-            if (!(service.id in serviceCache)) {
-                newService = true;
-            } else {
+            if (service.id in serviceCache) {
                 service.localState = serviceCache[service.id].localState;
                 service.timer = serviceCache[service.id].timer;
-                if ((service.offset != serviceCache[service.id].offset) || (service.frequency != serviceCache[service.id].frequency)) {
-                    service.reschedule = true;
-                }
             }
             serviceCache[service.id] = service;
-            if (newService) {
-                reschedule(service.id);
-            }
+            runNext(service.id);
         }
         seen[service.id] = true;
     });
@@ -175,7 +161,7 @@ function serviceRefresh(payload) {
 function _checkDelete(id) {
     logger.debug("removing check %s from run queue", id);
     if ('timer' in serviceCache[id]) {
-        clearInterval(serviceCache[id].timer);
+        clearTimeout(serviceCache[id].timer);
     }
     delete serviceCache[id];
 }
@@ -186,15 +172,22 @@ function serviceDelete(service) {
     }
 }
 
-function run(serviceId) {
+function run(serviceId, mstimestamp) {
+    var delay = new Date().getTime() - mstimestamp;
+    if (delay > 100) {
+      logger.error("check deley is " + delay + "ms");
+    } else if (delay > 30) {
+      logger.warn("check delay is "+ delay + "ms");
+    }
+    logger.debug(util.format("running check %d now.", serviceId));
     var service = serviceCache[serviceId];
     if (!service) {
         return;
     }
-    if (service.reschedule) {
-        reschedule(serviceId);
-    }
-    var timestamp = new Date().getTime();
+    var timestamp = Math.floor(mstimestamp/1000);
+    //schedule next run of check..
+    runNext(service.id);
+
     var type = monitorTypes[service.monitor_type_id].name.toLowerCase();
     if (type in checks) {
         var settings = {};
@@ -233,7 +226,7 @@ function run(serviceId) {
                                 unit: metric.unit,
                                 target_type: metric.target_type,
                                 value: metric.values[pos],
-                                time: timestamp/1000,
+                                time: timestamp,
                                 endpoint_id: service.endpoint_id,
                                 monitor_id: service.id,
                             });
@@ -250,14 +243,14 @@ function run(serviceId) {
                         event_type: "monitor_state",
                         org_id: service.org_id,
                         endpoint_id: service.endpoint_id,
-			endpoint: service.endpoint_slug,
+			                  endpoint: service.endpoint_slug,
                         collector: config.collector.slug,
                         collector_id: config.collector.id,
                         monitor_id: service.id,
                         monitor_type: type,
                         severity: 'ERROR',
                         message: response.error,
-                        timestamp: timestamp
+                        timestamp: timestamp * 1000
                     };
                     //console.log(eventPayload);
                     compress(eventPayload, function(err, buffer) {
@@ -267,9 +260,9 @@ function run(serviceId) {
                         }
                         socket.emit('event', buffer);
                     });
-                    
+
                 }
-                
+
                 if (serviceState === 0 && service.localState !== 0) {
                     logger.debug("check %s state transitioned from %s to %s", service.id, service.localState, serviceState);
                     var eventPayload = {
@@ -277,14 +270,14 @@ function run(serviceId) {
                         event_type: "monitor_state",
                         org_id: service.org_id,
                         endpoint_id: service.endpoint_id,
-			endpoint: service.endpoint_slug,
+			                  endpoint: service.endpoint_slug,
                         collector: config.collector.slug,
                         collector_id: config.collector.id,
                         monitor_id: service.id,
-			monitor_type: type,
+			                  monitor_type: type,
                         severity: 'OK',
                         message: "Monitor now OK.",
-                        timestamp: timestamp
+                        timestamp: timestamp * 1000
                     };
                     //console.log(eventPayload);
                     compress(eventPayload, function(err, buffer) {
@@ -312,12 +305,12 @@ function run(serviceId) {
                         unit: "state",
                         target_type: "gauge",
                         value: active,
-                        time: timestamp/1000,
+                        time: timestamp,
                         endpoint_id: service.endpoint_id,
                         monitor_id: service.id,
                     });
                 }
-                
+
             }
         });
     }
@@ -330,19 +323,19 @@ function compress(payload, cb) {
     cb(null, payload);
 }
 
-function reschedule(serviceId) {
+function runNext(serviceId) {
     var service = serviceCache[serviceId];
-    service.reschedule = false;
+    clearTimeout(service.timer);
     var now = new Date().getTime();
-    var seconds = Math.floor(now / 1000);
-    clearInterval(service.timer);
 
-    var wait = ((service.frequency + service.offset) - (seconds % service.frequency)) % service.frequency;
-    if (wait == 0) {
-        service.timer = setInterval(function() { run(service.id);}, service.frequency*1000);
+    var wait = (((service.frequency + service.offset) * 1000) - (now % (service.frequency * 1000))) % (service.frequency * 1000);
+    var next = wait + now;
+    logger.debug(util.format("running check %s again in %d ms", serviceId, wait));
+    if (wait <= 1) {
+        run(service.id, next);
     } else {
-        setTimeout(function() {
-            service.timer = setInterval(function() {run(service.id);}, service.frequency * 1000);
-        }, wait * 1000);
+        service.timer = setTimeout(function() {
+            run(service.id, next);
+        }, wait);
     }
 }
