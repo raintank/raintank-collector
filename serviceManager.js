@@ -27,87 +27,88 @@ var init = function() {
         res.data.forEach(function(type) {
             monitorTypes[type.id] = type;
         });
-    });
-    var secure = false;
-    if (config.serverUrl.indexOf('https://') == 0) {
-        secure = true;
-    }
-    socket = io(util.format("%s?&apiKey=%s&name=%s", config.serverUrl, querystring.escape(config.apiKey), querystring.escape(config.collector.name)), {transports: ["websocket"], secure: secure, forceNew: true});
+        var secure = false;
+        if (config.serverUrl.indexOf('https://') == 0) {
+            secure = true;
+        }
+        socket = io(util.format("%s?&apiKey=%s&name=%s", config.serverUrl, querystring.escape(config.apiKey), querystring.escape(config.collector.name)), {transports: ["websocket"], secure: secure, forceNew: true});
 
-    socket.on('connect', function(){
-        logger.info('connected to socket.io server');
-    });
 
-    socket.on("ready", function(collector) {
-        config.collector = collector;
-        ready = true;
-    });
+        socket.on('connect', function(){
+            logger.info('connected to socket.io server');
+        });
 
-    socket.on('authFailed', function(reason) {
-        logger.error("connection to controller failed.-", reason);
-        if (reason == "Collector not found") {
-            logger.info("creating new collector.");
-            var params = {
-                name: config.collector.name,
-                enabled: true
-            };
-            apiClient.put('collectors', params, function(err, res) {
+        socket.on("ready", function(collector) {
+            config.collector = collector;
+            ready = true;
+        });
+
+        socket.on('authFailed', function(reason) {
+            logger.error("connection to controller failed.-", reason);
+            if (reason == "Collector not found") {
+                logger.info("creating new collector.");
+                var params = {
+                    name: config.collector.name,
+                    enabled: true
+                };
+                apiClient.put('collectors', params, function(err, res) {
+                    socket.disconnect();
+                    return process.exit(1);
+                })
+            } else {
                 socket.disconnect();
                 return process.exit(1);
-            })
-        } else {
-            socket.disconnect();
-            return process.exit(1);
-        }
-    });
+            }
+        });
 
-    socket.on('refresh', function(data){
-        serviceRefresh(data);
-    });
+        socket.on('refresh', function(data){
+            serviceRefresh(data);
+        });
 
-    socket.on('updated', function(data) {
-        serviceUpdate(data);
-    });
+        socket.on('updated', function(data) {
+            serviceUpdate(data);
+        });
 
-    socket.on('created', function(data) {
-        serviceUpdate(data);
-    });
+        socket.on('created', function(data) {
+            serviceUpdate(data);
+        });
 
-    socket.on('removed', function(data) {
-        serviceDelete(data);
-    });
+        socket.on('removed', function(data) {
+            serviceDelete(data);
+        });
 
-    socket.on('connect_error', function(err) {
-        logger.error("serviceManager connection error. ", err);
-    });
+        socket.on('connect_error', function(err) {
+            logger.error("serviceManager connection error. ", err);
+        });
 
-    socket.on('disconnect', function(){
-        ready = false;
-        logger.info("disconnected from socket.io server.");
-    });
-    setInterval(function() {
-        logger.debug("Processing %s metrics/second %s checks", metricCount/10, Object.keys(serviceCache).length);
-        metricCount = 0;
-    }, 10000);
+        socket.on('disconnect', function(){
+            ready = false;
+            logger.info("disconnected from socket.io server.");
+        });
+        setInterval(function() {
+            logger.debug("Processing %s metrics/second %s checks", metricCount/10, Object.keys(serviceCache).length);
+            metricCount = 0;
+        }, 10000);
 
-    setInterval(function() {
-        if (!ready) {
-            return;
-        }
-        if (BUFFER.length == 0) {
-            return;
-        }
-        var payload = BUFFER;
-        BUFFER = [];
-        metricCount = metricCount + payload.length;
-        compress(payload, function(err, buffer) {
-            if (err) {
-                logger.error("Error compressing payload.", err);
+        setInterval(function() {
+            if (!ready) {
                 return;
             }
-            socket.emit('results', buffer);
-        });
-    }, 1000);
+            if (BUFFER.length == 0) {
+                return;
+            }
+            var payload = BUFFER;
+            BUFFER = [];
+            metricCount = metricCount + payload.length;
+            compress(payload, function(err, buffer) {
+                if (err) {
+                    logger.error("Error compressing payload.", err);
+                    return;
+                }
+                socket.emit('results', buffer);
+            });
+        }, 1000);
+    });
 }
 
 exports.init = init;
