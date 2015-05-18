@@ -3,6 +3,8 @@ var dns = require('native-dns');
 var basicDns = require('dns');
 var util = require('util');
 var async = require('async');
+var log4js = require('log4js');
+var logger = log4js.getLogger('PID:'+process.pid);
 
 function timeDiff(t1, t2) {
     //convert to milliseconds.
@@ -65,7 +67,7 @@ exports.execute = function(payload, callback) {
 
             dnsReq.on('message', function(err, answer) {
                 if (err) {
-                    console.log(err);
+                    logger.info("query %j failed with reason: %s", request, err);
                     return next();
                 }
                 success = true;
@@ -82,7 +84,7 @@ exports.execute = function(payload, callback) {
                         var respText = toString(payload.type, resp);
                         if (regex.test(respText)) {
                             regexMatch = true;
-                        } 
+                        }
                     });
                     if (!(regexMatch)) {
                         profile.error = 'Regular Expression not matched for any answer.';
@@ -153,14 +155,14 @@ function toString(type, answer) {
             response = answer.data;
             break;
         case 'SRV':
-            response = util.format('%s %s %s %s', 
+            response = util.format('%s %s %s %s',
                 answer.priority,
                 answer.weight,
                 answer.port,
                 answer.target);
             break;
         case 'MX':
-            response = util.format('%s %s', 
+            response = util.format('%s %s',
                 answer.priority,
                 answer.exchange);
             break;
