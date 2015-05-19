@@ -3,7 +3,6 @@ var config = require('./config').config;
 var util = require('util');
 var checks = require('./checks');
 var zlib = require('zlib');
-var ApiClient = require("./raintank-api-client");
 var querystring = require("querystring");
 var log4js = require('log4js');
 var logger = log4js.getLogger('PID:'+process.pid);
@@ -15,100 +14,79 @@ var metricCount = 0;
 var BUFFER = [];
 var ready = false;
 var monitorTypes = {};
-var apiClient = new ApiClient({url: config.serverUrl, apiKey: config.apiKey});
 
 var init = function() {
+    var secure = false;
+    if (config.serverUrl.indexOf('https://') == 0) {
+        secure = true;
+    }
+    socket = io(util.format("%s?&apiKey=%s&name=%s", config.serverUrl, querystring.escape(config.apiKey), querystring.escape(config.collector.name)), {transports: ["websocket"], secure: secure, forceNew: true});
 
-    apiClient.get('monitor_types', function(err, res) {
-        if (err) {
-            logger.fatal("failed to get monitor_types. ", err);
-            return process.exit(1);
-        }
-        res.data.forEach(function(type) {
+    socket.on('connect', function(){
+        logger.info('connected to socket.io server');
+    });
+
+    socket.on("ready", function(resp) {
+        config.collector = resp.collector;
+        resp.monitor_types.forEach(function(type) {
             monitorTypes[type.id] = type;
         });
-        var secure = false;
-        if (config.serverUrl.indexOf('https://') == 0) {
-            secure = true;
-        }
-        socket = io(util.format("%s?&apiKey=%s&name=%s", config.serverUrl, querystring.escape(config.apiKey), querystring.escape(config.collector.name)), {transports: ["websocket"], secure: secure, forceNew: true});
-
-
-        socket.on('connect', function(){
-            logger.info('connected to socket.io server');
-        });
-
-        socket.on("ready", function(collector) {
-            config.collector = collector;
-            ready = true;
-        });
-
-        socket.on('authFailed', function(reason) {
-            logger.error("connection to controller failed.-", reason);
-            if (reason == "Collector not found") {
-                logger.info("creating new collector.");
-                var params = {
-                    name: config.collector.name,
-                    enabled: true
-                };
-                apiClient.put('collectors', params, function(err, res) {
-                    socket.disconnect();
-                    return process.exit(1);
-                })
-            } else {
-                socket.disconnect();
-                return process.exit(1);
-            }
-        });
-
-        socket.on('refresh', function(data){
-            serviceRefresh(data);
-        });
-
-        socket.on('updated', function(data) {
-            serviceUpdate(data);
-        });
-
-        socket.on('created', function(data) {
-            serviceUpdate(data);
-        });
-
-        socket.on('removed', function(data) {
-            serviceDelete(data);
-        });
-
-        socket.on('connect_error', function(err) {
-            logger.error("serviceManager connection error. ", err);
-        });
-
-        socket.on('disconnect', function(){
-            ready = false;
-            logger.info("disconnected from socket.io server.");
-        });
-        setInterval(function() {
-            logger.debug("Processing %s metrics/second %s checks", metricCount/10, Object.keys(serviceCache).length);
-            metricCount = 0;
-        }, 10000);
-
-        setInterval(function() {
-            if (!ready) {
-                return;
-            }
-            if (BUFFER.length == 0) {
-                return;
-            }
-            var payload = BUFFER;
-            BUFFER = [];
-            metricCount = metricCount + payload.length;
-            compress(payload, function(err, buffer) {
-                if (err) {
-                    logger.error("Error compressing payload.", err);
-                    return;
-                }
-                socket.emit('results', buffer);
-            });
-        }, 1000);
+        ready = true;
     });
+
+    socket.on('error', function(reason) {
+        logger.error("controller emitted an error - ", reason);
+        socket.disconnect();
+        return process.exit(1);
+    });
+
+    socket.on('refresh', function(data){
+        serviceRefresh(data);
+    });
+
+    socket.on('updated', function(data) {
+        serviceUpdate(data);
+    });
+
+    socket.on('created', function(data) {
+        serviceUpdate(data);
+    });
+
+    socket.on('removed', function(data) {
+        serviceDelete(data);
+    });
+
+    socket.on('connect_error', function(err) {
+        logger.error("serviceManager connection error. ", err);
+    });
+
+    socket.on('disconnect', function(){
+        ready = false;
+        logger.info("disconnected from socket.io server.");
+    });
+    setInterval(function() {
+        logger.debug("Processing %s metrics/second %s checks", metricCount/10, Object.keys(serviceCache).length);
+        metricCount = 0;
+    }, 10000);
+
+    setInterval(function() {
+        if (!ready) {
+            return;
+        }
+        if (BUFFER.length == 0) {
+            return;
+        }
+        var payload = BUFFER;
+        BUFFER = [];
+        metricCount = metricCount + payload.length;
+        compress(payload, function(err, buffer) {
+            if (err) {
+                logger.error("Error compressing payload.", err);
+                return;
+            }
+            socket.emit('results', buffer);
+        });
+    }, 1000);
 }
 
 exports.init = init;
