@@ -94,7 +94,36 @@ exports.init = init;
 function serviceUpdate(service) {
     service.updated = new Date(service.updated);
 
-    currentService = serviceCache[service.id] || service;
+    currentService = serviceCache[service.id];
+    if (!currentService) {
+      currentService = service;
+      //send state metrics to so graphite knows this check exists.
+      var states = ["ok", "warn", 'error'];
+      // set the timestamp to be before now, but at the correct offset.
+      var updated_ts = Math.floor(service.updated.getTime()/1000);
+      var timestamp = (updated_ts - service.frequency
+          - (updated_ts % service.frequency)
+          + service.offset)
+      var type = monitorTypes[service.monitor_type_id].name.toLowerCase();
+      for (var state=0; state < states.length; state++) {
+          var metricName = util.format("network.%s.%s_state", type, states[state]);
+          var active = null;
+          logger.debug("initializing metric: ", metricName);
+          BUFFER.push({
+              name: util.format("%s.%s.%s", service.endpoint_slug, config.collector.slug, metricName),
+              org_id: service.org_id,
+              collector: config.collector.slug,
+              metric: metricName,
+              interval: service.frequency,
+              unit: "state",
+              target_type: "gauge",
+              value: null,
+              time: timestamp,
+              endpoint_id: service.endpoint_id,
+              monitor_id: service.id,
+          });
+      }
+    }
     logger.info("got serviceUpdate message for service: %s", service.id);
     logger.debug(service);
     if (service.updated >= currentService.updated) {
