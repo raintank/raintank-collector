@@ -1,5 +1,12 @@
 'use strict;'
-var config = require('./config').config;
+var configfile;
+if (process.argv.indexOf("-c") != -1) {
+	configfile = process.argv[process.argv.indexOf("-c") + 1 ];
+} else {
+	configfile = "./config";
+}
+console.log(configfile);
+var config = require(configfile).config;
 var cluster = require('cluster');
 var serviceManager = require('./serviceManager');
 var log4js = require('log4js');
