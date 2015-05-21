@@ -187,7 +187,7 @@ function run(serviceId, mstimestamp) {
     } else if (delay > 30) {
       logger.warn("check delay is "+ delay + "ms");
     }
-    logger.debug(util.format("running check %d now.", serviceId));
+    //logger.debug(util.format("running check %d now.", serviceId));
     var service = serviceCache[serviceId];
     if (!service) {
         return;
@@ -251,7 +251,7 @@ function run(serviceId, mstimestamp) {
                         event_type: "monitor_state",
                         org_id: service.org_id,
                         endpoint_id: service.endpoint_id,
-			                  endpoint: service.endpoint_slug,
+                        endpoint: service.endpoint_slug,
                         collector: config.collector.slug,
                         collector_id: config.collector.id,
                         monitor_id: service.id,
@@ -278,11 +278,11 @@ function run(serviceId, mstimestamp) {
                         event_type: "monitor_state",
                         org_id: service.org_id,
                         endpoint_id: service.endpoint_id,
-			                  endpoint: service.endpoint_slug,
+                        endpoint: service.endpoint_slug,
                         collector: config.collector.slug,
                         collector_id: config.collector.id,
                         monitor_id: service.id,
-			                  monitor_type: type,
+                        monitor_type: type,
                         severity: 'OK',
                         message: "Monitor now OK.",
                         timestamp: timestamp * 1000
@@ -337,13 +337,14 @@ function runNext(serviceId) {
     var now = new Date().getTime();
 
     var wait = (((service.frequency + service.offset) * 1000) - (now % (service.frequency * 1000))) % (service.frequency * 1000);
-    var next = wait + now;
-    logger.debug(util.format("running check %s again in %d ms", serviceId, wait));
-    if (wait <= 1) {
-        run(service.id, next);
-    } else {
-        service.timer = setTimeout(function() {
-            run(service.id, next);
-        }, wait);
+    if (wait <1) {
+      wait = wait + (service.frequency * 1000);
     }
+    wait += Math.random()*990;
+    var next = wait + now;
+    //logger.debug(util.format("running check %s again in %d ms", serviceId, wait));
+    service.timer = setTimeout(function() {
+        run(service.id, next);
+    }, wait);
 }
+
