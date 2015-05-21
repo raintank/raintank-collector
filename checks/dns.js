@@ -32,7 +32,6 @@ exports.execute = function(payload, callback) {
     };
     var complete = false;
     var nsservers = payload.server.split(',');
-    var startTime = process.hrtime();
     profile.startTime = new Date().getTime()/1000;
     var server = {
         address: null,
@@ -59,6 +58,7 @@ exports.execute = function(payload, callback) {
             }
             server.address = address;
 
+            var startTime = process.hrtime();
             var request = {question: question, server: server, timeout: (payload.timeout * 1000), cache: false}
             var dnsReq = dns.Request(request);
             dnsReq.on('timeout', function(){
