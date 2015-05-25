@@ -1,6 +1,16 @@
 'use strict;'
+var nopt = require('nopt');
+var path = require('path');
 
-var config = require('./config/config.json');
+var parsedOpts = nopt({"config": path}, {"c": ["--config"]}, process.argv, 2)
+var config;
+
+if (parsedOpts["config"]) {
+  config = require(parsedOpts['config']);
+} else {
+  config = require('./etc/config.json');
+}
+
 
 function parseEnv(name, value, cnf) {
 	if (name in cnf) {
