@@ -1,0 +1,8 @@
+{
+	"collector": {
+		"name": "Name Goes Here!"
+	},
+	"numCPUs": 1,
+	"serverUrl": "https://portal.raintank.io",
+	"apiKey": "Secret Key Goes Here!"
+}
