@@ -1,8 +1,7 @@
 'use strict';
 var dns = require('dns');
-var spawn = require('child_process').spawn;
-
-var COUNT = 5;
+var http = require('http');
+var config = require('../config').config;
 
 exports.execute = function(payload, callback) {
 	var profile = {
@@ -12,6 +11,7 @@ exports.execute = function(payload, callback) {
 		avg: null,
 		mean: null,
 		mdev: null,
+		error: null,
 	};
 	dns.lookup(payload.hostname, 4, function(err, address, family) {
         if (err) {
@@ -20,58 +20,31 @@ exports.execute = function(payload, callback) {
             respond(profile, callback);
             return;
         }
-        var child = spawn("fping", ["-C", ""+COUNT, "-q", address ]);
-        var output = '';
-        child.stderr.on('data', function(data) {
-        	output += data;
-        });
-        child.on("close", function(code) {
-        	output = output.trim();
-        	//207.99.5.164 : 698.83 445.50 718.78 466.50 -
-        	var results = output.split(' ').slice(2);
-			var failCount = 0;
-			var totalCount = results.length;
-			var tsum = 0;
-			var tsum2 = 0;
-			var min = null;
-			var max = null;
-			var successfulResults = [];
-			results.forEach(function(result) {
-				if (isNaN(result)) {
-					failCount++;
-				} else {
-					result = parseFloat(result);
-					if (max == null || result > max) {
-						max = result;
-					}
-					if (min == null || result < min) {
-						min = result;
-					}
-					tsum += result;
-					tsum2 += (result * result);
-					successfulResults.push(result);
-				}
-			});
-			profile.min = min;
-			profile.max = max;
-			var successCount = totalCount - failCount;
-			if (successCount > 0) {
-				profile.avg = tsum/successCount;
-				profile.mdev = Math.sqrt((tsum2/successCount) - ((tsum/successCount) *(tsum/successCount)));
-			}
-			if (successfulResults.length > 0) {
-				successfulResults.sort();
-				profile.mean = successfulResults[Math.floor(successfulResults.length/2)];
-			}
-			if (failCount == 0) {
-				profile.loss = 0;
-			} else {
-				profile.loss = 100 * (failCount/totalCount);
-			}
-			if (profile.loss >= 100) {
-				profile.error = "100% packet loss.";
-			}
-			respond(profile, callback);
+        http.get({
+        	host: 'localhost',
+        	port: config.pingServerPort,
+        	path:  '/'+address,
+        }, function(response) {
+        	var body = '';
+	        response.on('data', function(d) {
+	            body += d;
+	        });
+	        response.on('end', function() {
+	            // Data reception is done, do whatever with it!
+	            var parsed;
+	            try {
+	            	parsed = JSON.parse(body);
+	            	profile = parsed;
+	            } catch (ex) {
+	            	parsed = profile;
+	            }
+	            respond(profile, callback);
+	        });
+        }).on('error', function(e) {
+		  console.log("Got error: " + e.message);
+		  profile.error = e.message
+		  respond(profile, callback);
+		  return;
 		});
 	});
 }

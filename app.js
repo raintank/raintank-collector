@@ -5,13 +5,34 @@ var serviceManager = require('./serviceManager');
 var log4js = require('log4js');
 var logger = log4js.getLogger('PID:'+process.pid);
 log4js.replaceConsole();
+var spawn = require('child_process').spawn;
 
 var restartLog = [];
 
+function startPingServer() {
+    logger.info("starting up go-ping server")
+    var ping = spawn("./go-ping", ["-p", ""+config.pingServerPort]);
+    ping.stderr.on('data', function(data) {
+        logger.Error(data.toString());
+    });
+    ping.stdout.on('data', function(data) {
+        logger.info(data.toString());
+    });
+    ping.on("close", function(code) {
+        logger.error("Ping server terminated.");
+        setTimeout(function() {
+            startPingServer();
+        }, 1000)
+    });
+ }   
+
 if (cluster.isMaster) {
+    //start up go-ping server
+    startPingServer();
+
     // Fork workers.
     for (var i = 0; i < config.numCPUs; i++) {
-    	logger.info("launching worker process.");
+        logger.info("launching worker process.");
         cluster.fork();
     }
 

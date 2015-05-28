@@ -11,6 +11,7 @@ if (parsedOpts["config"]) {
   config = require('./etc/config.json');
 }
 
+config.pingServerPort = parseInt(config.pingServerPort) || 8080
 
 function parseEnv(name, value, cnf) {
 	if (name in cnf) {
