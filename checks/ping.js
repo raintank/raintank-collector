@@ -24,6 +24,7 @@ exports.execute = function(payload, callback) {
         	host: 'localhost',
         	port: config.pingServerPort,
         	path:  '/'+address,
+        	agent: false,
         }, function(response) {
         	var body = '';
 	        response.on('data', function(d) {
