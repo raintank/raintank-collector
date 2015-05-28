@@ -7,6 +7,8 @@ var querystring = require("querystring");
 var log4js = require('log4js');
 var logger = log4js.getLogger('PID:'+process.pid);
 var io = require('socket.io-client')
+var pjson = require('./package.json');
+
 
 var serviceCache = {};
 var socket;
@@ -20,7 +22,7 @@ var init = function() {
     if (config.serverUrl.indexOf('https://') == 0) {
         secure = true;
     }
-    socket = io(util.format("%s?&apiKey=%s&name=%s", config.serverUrl, querystring.escape(config.apiKey), querystring.escape(config.collector.name)), {transports: ["websocket"], secure: secure, forceNew: true});
+    socket = io(util.format("%s?&apiKey=%s&name=%s&version=%s", config.serverUrl, querystring.escape(config.apiKey), querystring.escape(config.collector.name), pjson.version), {transports: ["websocket"], secure: secure, forceNew: true});
 
     socket.on('connect', function(){
         logger.info('connected to socket.io server');
@@ -64,6 +66,7 @@ var init = function() {
         ready = false;
         logger.info("disconnected from socket.io server.");
     });
+    
     setInterval(function() {
         logger.debug("Processing %s metrics/second %s checks", metricCount/10, Object.keys(serviceCache).length);
         metricCount = 0;
