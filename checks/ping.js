@@ -2,7 +2,7 @@
 var dns = require('dns');
 var http = require('http');
 var config = require('../config').config;
-
+http.globalAgent.maxSockets = 1000;
 exports.execute = function(payload, callback) {
 	var profile = {
 		loss: null,
@@ -24,7 +24,6 @@ exports.execute = function(payload, callback) {
         	host: 'localhost',
         	port: config.pingServerPort,
         	path:  '/'+address,
-        	agent: false,
         }, function(response) {
         	var body = '';
 	        response.on('data', function(d) {
