@@ -106,9 +106,9 @@ function respond(metrics, callback) {
     var payload = [{
         plugin: "dns",
         unit: "ms",
-        dsnames: ["time"],
+        dsnames: ["time", "default"],
         target_type: "gauge",
-        values: [Math.round(metrics.time * 100) / 100],
+        values: [Math.round(metrics.time * 100) / 100, Math.round(metrics.time * 100) / 100],
         time: metrics.startTime,
     },
     {

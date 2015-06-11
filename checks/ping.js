@@ -75,6 +75,9 @@ function respond(metrics, callback) {
         payload[0].time = metrics.startTime;
     });
 
+    payload[0].dsnames.push('default')
+    payload[0].values.push(metrics['mean']);
+
     callback(null, {success: true, results: payload, error: metrics.error});
 }
 

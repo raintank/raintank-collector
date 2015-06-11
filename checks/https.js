@@ -199,6 +199,10 @@ function respond(metrics, callback) {
         payload[0].dsnames.push(m);
         payload[0].values.push(metrics[m]);
     });
+
+    payload[0].dsnames.push('default')
+    payload[0].values.push(metrics['total']);
+
     payload[1].dsnames.push('dataLength');
     if (!isNaN(metrics['dataLength']) && metrics['dataLength'] > 0 ) {
         metrics['dataLength'] = Math.round(metrics['dataLength'] * 100) / 100;
