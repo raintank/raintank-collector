@@ -109,7 +109,7 @@ function serviceUpdate(service) {
           + service.offset)
       var type = monitorTypes[service.monitor_type_id].name.toLowerCase();
       for (var state=0; state < states.length; state++) {
-          var metricName = util.format("network.%s.%s_state", type, states[state]);
+          var metricName = util.format("litmus.%s.%s_state", type, states[state]);
           var active = null;
           logger.debug("initializing metric: ", metricName);
           BUFFER.push({
@@ -222,7 +222,7 @@ function run(serviceId, mstimestamp) {
                             if (metric.values[pos] === null || isNaN(metric.values[pos])) {
                                 return;
                             }
-                            metric_name = util.format("network.%s.%s", type, dsname);
+                            metric_name = util.format("litmus.%s.%s", type, dsname);
                             BUFFER.push({
                                 name: util.format(
                                     "%s.%s.%s",
@@ -302,7 +302,7 @@ function run(serviceId, mstimestamp) {
                 service.localState = serviceState;
                 var states = ["ok", "warn", 'error'];
                 for (var state=0; state < states.length; state++) {
-                    var metricName = util.format("network.%s.%s_state", type, states[state]);
+                    var metricName = util.format("litmus.%s.%s_state", type, states[state]);
                     var active = 0;
                     if (state == serviceState) {
                         active = 1;
