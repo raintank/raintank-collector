@@ -66,7 +66,7 @@ var init = function() {
         ready = false;
         logger.info("disconnected from socket.io server.");
     });
-    
+
     setInterval(function() {
         logger.debug("Processing %s metrics/second %s checks", metricCount/10, Object.keys(serviceCache).length);
         metricCount = 0;
@@ -109,14 +109,14 @@ function serviceUpdate(service) {
           + service.offset)
       var type = monitorTypes[service.monitor_type_id].name.toLowerCase();
       for (var state=0; state < states.length; state++) {
-          var metricName = util.format("litmus.%s.%s_state", type, states[state]);
+          var metricName = util.format("%s.%s_state", type, states[state]);
           var active = null;
           logger.debug("initializing metric: ", metricName);
           BUFFER.push({
-              name: util.format("%s.%s.%s", service.endpoint_slug, config.collector.slug, metricName),
+              name: util.format("litmus.%s.%s.%s", service.endpoint_slug, config.collector.slug, metricName),
               org_id: service.org_id,
               collector: config.collector.slug,
-              metric: metricName,
+              metric: util.format("litmus.%s", metricName),
               interval: service.frequency,
               unit: "state",
               target_type: "gauge",
@@ -222,17 +222,17 @@ function run(serviceId, mstimestamp) {
                             if (metric.values[pos] === null || isNaN(metric.values[pos])) {
                                 return;
                             }
-                            metric_name = util.format("litmus.%s.%s", type, dsname);
+                            metric_name = util.format("%s.%s", type, dsname);
                             BUFFER.push({
                                 name: util.format(
-                                    "%s.%s.%s",
+                                    "litmus.%s.%s.%s",
                                     service.endpoint_slug,
                                     config.collector.slug,
                                     metric_name
                                 ),
                                 org_id: service.org_id,
                                 collector: config.collector.slug,
-                                metric: metric_name,
+                                metric: util.format("litmus.%s", metric_name),
                                 interval: service.frequency,
                                 unit: metric.unit,
                                 target_type: metric.target_type,
@@ -302,16 +302,16 @@ function run(serviceId, mstimestamp) {
                 service.localState = serviceState;
                 var states = ["ok", "warn", 'error'];
                 for (var state=0; state < states.length; state++) {
-                    var metricName = util.format("litmus.%s.%s_state", type, states[state]);
+                    var metricName = util.format("%s.%s_state", type, states[state]);
                     var active = 0;
                     if (state == serviceState) {
                         active = 1;
                     }
                     BUFFER.push({
-                        name: util.format("%s.%s.%s", service.endpoint_slug, config.collector.slug, metricName),
+                        name: util.format("litmus.%s.%s.%s", service.endpoint_slug, config.collector.slug, metricName),
                         org_id: service.org_id,
                         collector: config.collector.slug,
-                        metric: metricName,
+                        metric: util.format("litmus.%s", metricName),
                         interval: service.frequency,
                         unit: "state",
                         target_type: "gauge",
