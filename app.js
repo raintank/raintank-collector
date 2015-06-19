@@ -13,7 +13,7 @@ function startPingServer() {
     logger.info("starting up go-ping server")
     var ping = spawn("./go-ping", ["-p", ""+config.pingServerPort]);
     ping.stderr.on('data', function(data) {
-        logger.Error(data.toString());
+        logger.error(data.toString());
     });
     ping.stdout.on('data', function(data) {
         logger.info(data.toString());
@@ -24,7 +24,7 @@ function startPingServer() {
             startPingServer();
         }, 1000)
     });
- }   
+ }
 
 if (cluster.isMaster) {
     //start up go-ping server
