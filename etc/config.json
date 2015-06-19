@@ -4,5 +4,6 @@
 	},
 	"numCPUs": 1,
 	"serverUrl": "https://portal.raintank.io",
-	"apiKey": "Secret Key Goes Here!"
+	"apiKey": "Secret Key Goes Here!",
+	"pingServerPort": 8080
 }

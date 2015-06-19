@@ -23,7 +23,7 @@ git clone https://github.com/raintank/raintank-collector.git
 npm install
   ```
   * Install fping.  Installation depends on your linux distribution. http://fping.org/
-  * Create the config/config.json with the collector name created in step 1 and the ApiKey created in step 2.
+  * Create a config file using etc/config.json as a template, with the collector name created in step 1 and the ApiKey created in step 2.
   ```
 {
 	"collector": {
@@ -31,10 +31,11 @@ npm install
 	},
 	"numCPUs": 1,
 	"serverUrl": "https://portal.raintank.io",
-	"apiKey": "<Your API KEY>"
+	"apiKey": "<Your API KEY>",
+	"pingServerPort": 8080
 }
   ```
   * Then start the app.
   ```
-nodejs app.js
+nodejs app.js -c /path/to/config.json
   ```
