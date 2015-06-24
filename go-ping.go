@@ -8,6 +8,7 @@ import (
 	"math"
 	"net"
 	"net/http"
+	"os"
 	"sort"
 	"time"
 )
@@ -27,20 +28,21 @@ const count = 5
 func main() {
 	http.HandleFunc("/", handler)
 	var port int
-	flag.IntVar(&port, "p", 8080, "tcp port to listen on")
+	flag.IntVar(&port, "p", 8080, "TCP port to listen on")
 	flag.Parse()
 	fmt.Println("Go-Ping server starting up.")
-	http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), nil)
+	err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), nil)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-
 	ipaddr := r.URL.Path[1:]
 	result := pingHost(ipaddr)
 	json, err := json.Marshal(result)
 	if err != nil {
-		fmt.Println("failed to convert to json.")
-		fmt.Println(err)
+		fmt.Fprintf(os.Stderr, "Internal error: failed to convert to json: %s\n", err)
 		w.WriteHeader(500)
 		w.Write([]byte("could not marshal payload to json"))
 		return
@@ -55,7 +57,7 @@ func pingHost(ipaddr string) *PingResult {
 	results := make([]float64, count)
 	result := PingResult{}
 	if err := p.AddIP(ipaddr); err != nil {
-		msg := "invalid IP address"
+		msg := fmt.Sprintf("invalid IP address: %s", err)
 		result.Error = &msg
 		return &result
 	}
@@ -66,7 +68,7 @@ func pingHost(ipaddr string) *PingResult {
 		}
 		err := p.Run()
 		if err != nil {
-			fmt.Println(err)
+			fmt.Fprintln(os.Stderr, err)
 		}
 	}
 	failCount := 0.0
