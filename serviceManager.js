@@ -16,13 +16,19 @@ var metricCount = 0;
 var BUFFER = [];
 var ready = false;
 var monitorTypes = {};
+var serverSocketId;
 
 var init = function() {
     var secure = false;
     if (config.serverUrl.indexOf('https://') == 0) {
         secure = true;
     }
-    socket = io(util.format("%s?&apiKey=%s&name=%s&version=%s", config.serverUrl, querystring.escape(config.apiKey), querystring.escape(config.collector.name), pjson.version), {transports: ["websocket"], secure: secure, forceNew: true});
+    var queryParams = {
+      "apiKey": config.apiKey,
+      "name": config.collector.name,
+      "version": pjson.version,
+    }
+    socket = io(util.format("%s?%s", config.serverUrl, querystring.stringify(queryParams)), {transports: ["websocket"], secure: secure, forceNew: true});
 
     socket.on('connect', function(){
         logger.info('connected to socket.io server');
@@ -33,6 +39,11 @@ var init = function() {
         resp.monitor_types.forEach(function(type) {
             monitorTypes[type.id] = type;
         });
+        queryParams.lastSocketId = resp.socket_id;
+        // update our sockett.io uri so that next time we connect, we pass the socketid we are using.
+        // this will allow the controller to immediately delete the old session and not have to wait
+        // for a timeout.
+        socket.io.uri = util.format("%s?%s", config.serverUrl, querystring.stringify(queryParams));
         ready = true;
     });
 
