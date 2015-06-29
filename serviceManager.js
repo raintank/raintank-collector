@@ -35,7 +35,9 @@ var init = function() {
     });
 
     socket.on("ready", function(resp) {
+        logger.info("recieved ready event from controller");
         config.collector = resp.collector;
+        logger.info("collector.enabled is: " + config.collector.enabled);
         resp.monitor_types.forEach(function(type) {
             monitorTypes[type.id] = type;
         });
@@ -79,8 +81,10 @@ var init = function() {
     });
 
     setInterval(function() {
-        logger.debug("Processing %s metrics/second %s checks", metricCount/10, Object.keys(serviceCache).length);
-        metricCount = 0;
+        if (config.collector.enabled) {
+            logger.debug("Processing %s metrics/second %s checks", metricCount/10, Object.keys(serviceCache).length);
+            metricCount = 0;
+        }
     }, 10000);
 
     setInterval(function() {
@@ -209,6 +213,10 @@ function run(serviceId, mstimestamp) {
     var timestamp = Math.floor(mstimestamp/1000);
     //schedule next run of check..
     runNext(service.id);
+    if (!config.collector.enabled) {
+      // collector is disabled.
+      return;
+    }
 
     var type = monitorTypes[service.monitor_type_id].name.toLowerCase();
     if (type in checks) {
