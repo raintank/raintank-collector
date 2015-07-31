@@ -2,6 +2,7 @@
 var dns = require('dns');
 var https = require('https');
 var zlib = require('zlib');
+var util = require('util');
 
 function expandHeaders(headersTxt) {
     var headers = {};
@@ -24,7 +25,7 @@ function timeDiff(t1, t2) {
     return ((t1[0] - t2[0]) * 1e3) + ((t1[1] - t2[1])/1e6);
 }
 
-exports.execute = function(payload, callback) {
+exports.execute = function(payload, service, config, timestamp, callback) {
     var hostname = payload.host;
     var headers = expandHeaders(payload.headers);
     var expectRegex = payload.expectRegex;
@@ -59,7 +60,7 @@ exports.execute = function(payload, callback) {
     };
 
     var startTime = process.hrtime();
-    metrics.startTime = new Date().getTime()/1000;
+    metrics.startTime = timestamp;
     var step = startTime;
     var request;
     var timedout = false;
@@ -70,7 +71,7 @@ exports.execute = function(payload, callback) {
             request.abort();
         }
         metrics.error = "timed out after " + payload.timeout + " seconds.";
-        return respond(metrics, callback);
+        return respond(metrics, service, config, callback);
     }, payload.timeout * 1000);
 
     dns.lookup(hostname, 4, function(err, address, family) {
@@ -80,7 +81,7 @@ exports.execute = function(payload, callback) {
             if (timedout) return;
             console.log(err);
             metrics.error = "dns lookup failure.";
-            return respond(metrics, callback);
+            return respond(metrics, service, config, callback);
         }
         metrics.dns = timeDiff(dnsTime, step);
         metrics.total += metrics.dns;
@@ -108,7 +109,7 @@ exports.execute = function(payload, callback) {
             metrics.send = timeDiff(requestEndTime, step);
             metrics.total += metrics.send;
             metrics.error = e.message;
-            return respond(metrics, callback);
+            return respond(metrics, service, config, callback);
         });
         request.on('finish', function() {
             var requestEndTime = process.hrtime();
@@ -137,7 +138,10 @@ exports.execute = function(payload, callback) {
                 metrics.total += metrics.recv;
                 metrics.dataLength = dataLength;
                 metrics.statusCode = response.statusCode;
-                if (expectRegex) {
+                if (metrics.statusCode >= 400) {
+                    metrics.error = "Invalid statusCode. "+metrics.statusCode;
+                }
+                if (expectRegex && !metrics.error) {
                     if ('content-encoding' in response.headers && response.headers['content-encoding'] == 'gzip') {
                         //handle gziped data.
                         var buffer = Buffer.concat(rawResp);
@@ -151,69 +155,126 @@ exports.execute = function(payload, callback) {
                                 metrics.error = "expectRegex did not match.";
                             }
                           }
-                          respond(metrics, callback);
+                          respond(metrics, service, config, callback);
                         });
                     } else {
                         var rexp = new RegExp(expectRegex, 'g');
                         if (!(rexp.test(rawResp))) {
                             metrics.error = "expectRegex did not match.";
                         }
-                        respond(metrics, callback);
+                        respond(metrics, service, config, callback);
                     }
                 } else {
-                    return respond(metrics, callback);
+                    return respond(metrics, service, config, callback);
                 }
             });
         });
     });
 }
 
-function respond(metrics, callback) {
-    var payload = [{
-        plugin: "https",
-        unit: "ms",
-        dsnames: [],
-        target_type: "gauge",
-        values: [],
-        time: metrics.startTime
-    },{
-        plugin: "https",
-        unit: "bytes",
-        dsnames: [],
-        target_type: "gauge",
-        values: [],
-        time: metrics.startTime
-    },
-    {
-        plugin: "https",
-        unit: "code",
-        dsnames: ["statusCode"],
-        target_type: "gauge",
-        values: [],
-        time: metrics.startTime
-    }];
+function respond(metrics, service, config, callback) {
+    var payload = [];
+
     ['dns','connect','send','wait','recv', 'total'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
-            metrics[m] = Math.round(metrics[m] * 100) / 100;
+            metrics[m] = metrics[m] = Math.round(metrics[m] * 100) / 100;
         }
-        payload[0].dsnames.push(m);
-        payload[0].values.push(metrics[m]);
+        payload.push({
+            name: util.format(
+                "litmus.%s.%s.http.%s",
+                service.endpoint_slug,
+                config.collector.slug,
+                m
+            ),
+            org_id: service.org_id,
+            collector: config.collector.slug,
+            metric: util.format("litmus.http.%s", m),
+            interval: service.frequency,
+            unit: "ms",
+            target_type: "gauge",
+            value: metrics[m],
+            time: metrics.startTime,
+            endpoint_id: service.endpoint_id,
+            monitor_id: service.id
+        });
+    });
+    
+    payload.push({
+        name: util.format(
+            "litmus.%s.%s.http.default",
+            service.endpoint_slug,
+            config.collector.slug
+        ),
+        org_id: service.org_id,
+        collector: config.collector.slug,
+        metric: "litmus.http.default",
+        interval: service.frequency,
+        unit: "ms",
+        target_type: "gauge",
+        value: metrics['total'],
+        time: metrics.startTime,
+        endpoint_id: service.endpoint_id,
+        monitor_id: service.id
     });
 
-    payload[0].dsnames.push('default')
-    payload[0].values.push(metrics['total']);
-
-    payload[1].dsnames.push('dataLength');
     if (!isNaN(metrics['dataLength']) && metrics['dataLength'] > 0 ) {
         metrics['dataLength'] = Math.round(metrics['dataLength'] * 100) / 100;
     }
-    payload[1].values.push(metrics['dataLength']);
+    payload.push({
+        name: util.format(
+            "litmus.%s.%s.http.dataLength",
+            service.endpoint_slug,
+            config.collector.slug
+        ),
+        org_id: service.org_id,
+        collector: config.collector.slug,
+        metric: "litmus.http.dataLength",
+        interval: service.frequency,
+        unit: "bytes",
+        target_type: "gauge",
+        value: metrics['dataLength'],
+        time: metrics.startTime,
+        endpoint_id: service.endpoint_id,
+        monitor_id: service.id
+    });
+
     if (metrics['dataLength'] > 0 && metrics['recv'] > 0) {
-        payload[1].dsnames.push('throughput');
-        payload[1].values.push(metrics['dataLength']/(metrics['recv']/1000));
+        payload.push({
+            name: util.format(
+                "litmus.%s.%s.http.throughput",
+                service.endpoint_slug,
+                config.collector.slug
+            ),
+            org_id: service.org_id,
+            collector: config.collector.slug,
+            metric: "litmus.http.throughput",
+            interval: service.frequency,
+            unit: "bytes",
+            target_type: "gauge",
+            value: metrics['dataLength']/(metrics['recv']/1000),
+            time: metrics.startTime,
+            endpoint_id: service.endpoint_id,
+            monitor_id: service.id
+        });
     }
-     
-    payload[2].values.push(metrics['statusCode']);
+
+    payload.push({
+        name: util.format(
+            "litmus.%s.%s.http.statusCode",
+            service.endpoint_slug,
+            config.collector.slug
+        ),
+        org_id: service.org_id,
+        collector: config.collector.slug,
+        metric: "litmus.http.statusCode",
+        interval: service.frequency,
+        unit: "code",
+        target_type: "gauge",
+        value: metrics['statusCode'],
+        time: metrics.startTime,
+        endpoint_id: service.endpoint_id,
+        monitor_id: service.id
+    });
 
     callback(null, {success: true, results: payload, error: metrics.error});
 }

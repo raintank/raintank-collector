@@ -75,9 +75,9 @@ var init = function() {
         logger.error("serviceManager connection error. ", err);
     });
 
-    socket.on('disconnect', function(){
+    socket.on('disconnect', function(err){
         ready = false;
-        logger.info("disconnected from socket.io server.");
+        logger.info("disconnected from socket.io server.", err);
     });
 
     setInterval(function() {
@@ -201,7 +201,7 @@ function serviceDelete(service) {
 function run(serviceId, mstimestamp) {
     var delay = new Date().getTime() - mstimestamp;
     if (delay > 100) {
-      logger.error("check deley is " + delay + "ms");
+      logger.error("check delay is " + delay + "ms");
     } else if (delay > 30) {
       logger.warn("check delay is "+ delay + "ms");
     }
@@ -227,42 +227,13 @@ function run(serviceId, mstimestamp) {
         if (!("timeout" in settings)) {
             settings["timeout"] = 10;
         }
-        checks[type].execute(settings, function(err, response) {
+        checks[type].execute(settings, service, config, timestamp, function(err, response) {
             if  (response.success) {
                 var events = [];
                 var metrics = response.results;
                 //console.log(metrics);
                 if (metrics) {
-                    metrics.forEach(function(metric) {
-                        metric.collector = config.collector.id;
-                        metric.interval = service.frequency;
-                        var pos = 0;
-                        metric.dsnames.forEach(function(dsname) {
-                            if (metric.values[pos] === null || isNaN(metric.values[pos])) {
-                                return;
-                            }
-                            metric_name = util.format("%s.%s", type, dsname);
-                            BUFFER.push({
-                                name: util.format(
-                                    "litmus.%s.%s.%s",
-                                    service.endpoint_slug,
-                                    config.collector.slug,
-                                    metric_name
-                                ),
-                                org_id: service.org_id,
-                                collector: config.collector.slug,
-                                metric: util.format("litmus.%s", metric_name),
-                                interval: service.frequency,
-                                unit: metric.unit,
-                                target_type: metric.target_type,
-                                value: metric.values[pos],
-                                time: timestamp,
-                                endpoint_id: service.endpoint_id,
-                                monitor_id: service.id,
-                            });
-                            pos++;
-                        });
-                    });
+                    BUFFER.push(metrics);
                 }
                 var serviceState = 0;
                 if (response.error ) {
@@ -340,7 +311,6 @@ function run(serviceId, mstimestamp) {
                         monitor_id: service.id,
                     });
                 }
-
             }
         });
     }
