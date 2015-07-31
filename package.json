@@ -10,7 +10,9 @@
     "native-dns": "*",
     "net-snmp": "*",
     "socket.io-client": "*",
-    "nopt": "*",
-    "log4js": "*"
+    "nopt": "~3.0.3",
+    "log4js": "*",
+    "lodash": "~3.10.0",
+    "sitespeed.io": "~3.7.2"
   }
 }
