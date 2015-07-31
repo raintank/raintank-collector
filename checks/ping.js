@@ -2,8 +2,10 @@
 var dns = require('dns');
 var http = require('http');
 var config = require('../config').config;
+var util = require('util');
 http.globalAgent.maxSockets = 1000;
-exports.execute = function(payload, callback) {
+
+exports.execute = function(payload, service, config, timestamp, callback) {
 	var profile = {
 		loss: null,
 		min: null,
@@ -12,12 +14,14 @@ exports.execute = function(payload, callback) {
 		mean: null,
 		mdev: null,
 		error: null,
+        startTime: timestamp,
 	};
+
 	dns.lookup(payload.hostname, 4, function(err, address, family) {
         if (err) {
             console.log(err);
             profile.error = "dns lookup failure.";
-            respond(profile, callback);
+            respond(profile, service, config, callback);
             return;
         }
         http.get({
@@ -38,45 +42,81 @@ exports.execute = function(payload, callback) {
 	            } catch (ex) {
 	            	parsed = profile;
 	            }
-	            respond(profile, callback);
+                profile.startTime = timestamp;
+	            respond(profile, service, config, callback);
 	        });
         }).on('error', function(e) {
 		  console.log("Got error: " + e.message);
 		  profile.error = e.message
-		  respond(profile, callback);
+		  respond(profile, service, config, callback);
 		  return;
 		});
 	});
 }
 
-function respond(metrics, callback) {
-    var payload = [{
-        plugin: "ping",
-        unit: "ms",
-        dsnames: [],
-        target_type: "gauge",
-        values: [],
-        time: metrics.startTime
-    },
-    {
-        plugin: "ping",
-        unit: "%",
-        dsnames: ["loss"],
-        target_type: "gauge",
-        values: [metrics.loss],
-        time: metrics.startTime
-    }];
+function respond(metrics, service, config, callback) {
+
+    var payload = [];
     ['min','max','avg','mean', 'mdev'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
             metrics[m] = metrics[m] = Math.round(metrics[m] * 100) / 100;
         }
-        payload[0].dsnames.push(m);
-        payload[0].values.push(metrics[m]);
-        payload[0].time = metrics.startTime;
+        payload.push({
+            name: util.format(
+                "litmus.%s.%s.ping.%s",
+                service.endpoint_slug,
+                config.collector.slug,
+                m
+            ),
+            org_id: service.org_id,
+            collector: config.collector.slug,
+            metric: util.format("litmus.ping.%s", m),
+            interval: service.frequency,
+            unit: "ms",
+            target_type: "gauge",
+            value: metrics[m],
+            time: metrics.startTime,
+            endpoint_id: service.endpoint_id,
+            monitor_id: service.id
+        });
     });
 
-    payload[0].dsnames.push('default')
-    payload[0].values.push(metrics['mean']);
+    payload.push({
+        name: util.format(
+            "litmus.%s.%s.ping.%s",
+            service.endpoint_slug,
+            config.collector.slug,
+            "default"
+        ),
+        org_id: service.org_id,
+        collector: config.collector.slug,
+        metric: util.format("litmus.ping.%s", "default"),
+        interval: service.frequency,
+        unit: "ms",
+        target_type: "gauge",
+        value: metrics["mean"],
+        time: metrics.startTime,
+        endpoint_id: service.endpoint_id,
+        monitor_id: service.id
+    });
+    payload.push({
+        name: util.format(
+            "litmus.%s.%s.ping.%s",
+            service.endpoint_slug,
+            config.collector.slug,
+            "loss"
+        ),
+        org_id: service.org_id,
+        collector: config.collector.slug,
+        metric: util.format("litmus.ping.%s", "loss"),
+        interval: service.frequency,
+        unit: "%",
+        target_type: "gauge",
+        value: metrics["loss"],
+        time: metrics.startTime,
+        endpoint_id: service.endpoint_id,
+        monitor_id: service.id
+    });
 
     callback(null, {success: true, results: payload, error: metrics.error});
 }

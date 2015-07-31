@@ -20,7 +20,7 @@ function lookupServer(server, callback) {
     });
 }
 
-exports.execute = function(payload, callback) {
+exports.execute = function(payload, service, config, timestamp, callback) {
     var question = dns.Question({
         name: payload.name,
         type: payload.type,
@@ -32,7 +32,7 @@ exports.execute = function(payload, callback) {
     };
     var complete = false;
     var nsservers = payload.server.split(',');
-    profile.startTime = new Date().getTime()/1000;
+    profile.startTime = timestamp;
     var server = {
         address: null,
         port: parseInt(payload.port),
@@ -98,35 +98,81 @@ exports.execute = function(payload, callback) {
         if (!success) {
             profile.error = "All target servers failed to respond";
         }
-        respond(profile, callback);
+        respond(profile, service, config, callback);
     });
 }
 
-function respond(metrics, callback) {
-    var payload = [{
-        plugin: "dns",
-        unit: "ms",
-        dsnames: ["time", "default"],
-        target_type: "gauge",
-        values: [Math.round(metrics.time * 100) / 100, Math.round(metrics.time * 100) / 100],
-        time: metrics.startTime,
-    },
-    {
-        plugin: "dns",
-        unit: "s",
-        dsnames: ["ttl"],
-        target_type: "gauge",
-        values: [metrics.ttl],
-        time: metrics.startTime,
-    },
-    {
-        plugin: "dns",
-        unit: "count",
-        dsnames: ["answers"],
-        target_type: "gauge",
-        values: [metrics.answers],
-        time: metrics.startTime,
-    }];
+function respond(metrics, service, config, callback) {
+    var payload = [
+        {
+            name: util.format(
+                "litmus.%s.%s.dns.time",
+                service.endpoint_slug,
+                config.collector.slug
+            ),
+            org_id: service.org_id,
+            collector: config.collector.slug,
+            metric: "litmus.dns.time",
+            interval: service.frequency,
+            unit: "ms",
+            target_type: "gauge",
+            value: Math.round(metrics.time * 100) / 100,
+            time: metrics.startTime,
+            endpoint_id: service.endpoint_id,
+            monitor_id: service.id
+        },
+        {
+            name: util.format(
+                "litmus.%s.%s.dns.default",
+                service.endpoint_slug,
+                config.collector.slug
+            ),
+            org_id: service.org_id,
+            collector: config.collector.slug,
+            metric: "litmus.dns.default",
+            interval: service.frequency,
+            unit: "ms",
+            target_type: "gauge",
+            value: Math.round(metrics.time * 100) / 100,
+            time: metrics.startTime,
+            endpoint_id: service.endpoint_id,
+            monitor_id: service.id
+        },
+        {
+            name: util.format(
+                "litmus.%s.%s.dns.ttl",
+                service.endpoint_slug,
+                config.collector.slug
+            ),
+            org_id: service.org_id,
+            collector: config.collector.slug,
+            metric: "litmus.dns.ttl",
+            interval: service.frequency,
+            unit: "s",
+            target_type: "gauge",
+            value: metrics.ttl,
+            time: metrics.startTime,
+            endpoint_id: service.endpoint_id,
+            monitor_id: service.id
+        },
+        {
+            name: util.format(
+                "litmus.%s.%s.dns.answers",
+                service.endpoint_slug,
+                config.collector.slug
+            ),
+            org_id: service.org_id,
+            collector: config.collector.slug,
+            metric: "litmus.dns.answers",
+            interval: service.frequency,
+            unit: "count",
+            target_type: "gauge",
+            value: metrics.answers,
+            time: metrics.startTime,
+            endpoint_id: service.endpoint_id,
+            monitor_id: service.id
+        }
+    ];
     callback(null, {success: true, results: payload, error: metrics.error});
 }
 
