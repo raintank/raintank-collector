@@ -1,5 +1,4 @@
 'use strict';
-var dns = require('dns');
 var http = require('http');
 var config = require('../config').config;
 var util = require('util');
