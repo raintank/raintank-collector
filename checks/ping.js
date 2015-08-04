@@ -4,54 +4,61 @@ var http = require('http');
 var config = require('../config').config;
 var util = require('util');
 http.globalAgent.maxSockets = 1000;
+var log4js = require('log4js');
+var logger = log4js.getLogger('PID:'+process.pid);
 
 exports.execute = function(payload, service, config, timestamp, callback) {
-	var profile = {
-		loss: null,
-		min: null,
-		max: null,
-		avg: null,
-		mean: null,
-		mdev: null,
-		error: null,
+    var profile = {
+        loss: null,
+        min: null,
+        max: null,
+        avg: null,
+        mean: null,
+        mdev: null,
+        error: null,
         startTime: timestamp,
-	};
-
-	dns.lookup(payload.hostname, 4, function(err, address, family) {
-        if (err) {
-            console.log(err);
-            profile.error = "dns lookup failure.";
+    };
+    var post_body = JSON.stringify(payload);
+    var req = http.request({
+        host: 'localhost',
+        port: config.probeServerPort,
+        path:  '/ping',
+        method: 'POST',
+        headers: {'Content-Type': "application/json", 'Content-Length': post_body.length}
+    }, function(response) {
+        var body = '';
+        response.on('data', function(d) {
+            body += d;
+        });
+        response.on('end', function() {
+            if (response.statusCode != 200) {
+                // 500 errors are internal and should not be returned in the 
+                // response payload.
+                if (response.statusCode < 500) {
+                    profile.error = body;
+                } else {
+                    logger.error("ping check failed. ", body);
+                }
+                return respond(profile, service, config, callback);
+            }
+            // Data reception is done, do whatever with it!
+            var parsed;
+            try {
+                parsed = JSON.parse(body);
+                profile = parsed;
+            } catch (ex) {
+                parsed = profile;
+            }
+            //put the startTime back in the profile.
+            profile.startTime = timestamp;
             respond(profile, service, config, callback);
-            return;
-        }
-        http.get({
-        	host: 'localhost',
-        	port: config.pingServerPort,
-        	path:  '/'+address,
-        }, function(response) {
-        	var body = '';
-	        response.on('data', function(d) {
-	            body += d;
-	        });
-	        response.on('end', function() {
-	            // Data reception is done, do whatever with it!
-	            var parsed;
-	            try {
-	            	parsed = JSON.parse(body);
-	            	profile = parsed;
-	            } catch (ex) {
-	            	parsed = profile;
-	            }
-                profile.startTime = timestamp;
-	            respond(profile, service, config, callback);
-	        });
-        }).on('error', function(e) {
-		  console.log("Got error: " + e.message);
-		  profile.error = e.message
-		  respond(profile, service, config, callback);
-		  return;
-		});
-	});
+        });
+    }).on('error', function(e) {
+      logger.error("Got error: " + e.message);
+      return respond(profile, service, config, callback);
+    });
+    req.write(post_body);
+    req.end();
 }
 
 function respond(metrics, service, config, callback) {

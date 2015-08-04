@@ -9,9 +9,9 @@ var spawn = require('child_process').spawn;
 
 var restartLog = [];
 
-function startPingServer() {
-    logger.info("starting up go-ping server")
-    var ping = spawn("./go-ping", ["-p", ""+config.pingServerPort]);
+function startProbeServer() {
+    logger.info("starting up raintank-probe server")
+    var ping = spawn("./raintank-probe", ["-p", ""+config.probeServerPort]);
     ping.stderr.on('data', function(data) {
         logger.error(data.toString());
     });
@@ -19,16 +19,16 @@ function startPingServer() {
         logger.info(data.toString());
     });
     ping.on("close", function(code) {
-        logger.error("Ping server terminated.");
+        logger.error("raintank-probe server terminated.");
         setTimeout(function() {
-            startPingServer();
+            startProbeServer();
         }, 1000)
     });
  }
 
 if (cluster.isMaster) {
     //start up go-ping server
-    startPingServer();
+    startProbeServer();
 
     // Fork workers.
     for (var i = 0; i < config.numCPUs; i++) {

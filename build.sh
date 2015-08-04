@@ -1,4 +1,4 @@
 #!/bin/sh
-go get -u github.com/tatsushid/go-fastping
-go build -o go-ping
+go get -u github.com/raintank/raintank-probe
+cp $GOPATH/bin/raintank-probe .
 npm install
