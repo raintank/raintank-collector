@@ -102,6 +102,7 @@ var init = function() {
                 logger.error("Error compressing payload.", err);
                 return;
             }
+            console.log(buffer);
             socket.emit('results', buffer);
         });
     }, 1000);
@@ -233,7 +234,9 @@ function run(serviceId, mstimestamp) {
                 var metrics = response.results;
                 //console.log(metrics);
                 if (metrics) {
-                    BUFFER.push(metrics);
+                    metrics.forEach(function(m) {
+                        BUFFER.push(m);
+                    });
                 }
                 var serviceState = 0;
                 if (response.error ) {

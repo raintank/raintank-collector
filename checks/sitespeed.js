@@ -11,6 +11,7 @@ var staticConfig = {
     resultBaseDir: "/tmp/sitespeed",
     graphiteNamespace: "rt-sitespeed",
     browser: "chrome",
+    seleniumServer: "http://127.0.0.1:4444/wd/hub",
     graphiteData: "all"  //  summary,rules,pagemetrics,timings,requests"
 };
 
@@ -49,18 +50,18 @@ function StatsCollector(sp_config, rt_service, rt_config, timestamp, result) {
     this.org_id = rt_service.org_id;
     this.endpoint_id = rt_service.endpoint_id;
     this.endpoint_slug = rt_service.endpoint_slug;
-    this.monitor_id = rt.service.id;
+    this.monitor_id = rt_service.id;
     this.collector_id = rt_config.collector.id;
     this.collector_slug = rt_config.collector.slug;
     this.timestamp = timestamp;
-    this.result = result;
+    this.result = result.result;
     this.interval = rt_service.frequency;
 }
 
 exports.execute = function(payload, rt_service, rt_config, timestamp, callback) {
     var sp_config = lodash.clone(staticConfig);
     lodash.defaults(sp_config, payload, defaultConfig);
-    sp_config.graphiteNamespace = util.format("rt-sitespeed.%s.%s", rt_service.slug, rt_config.collector.slug);
+    sp_config.graphiteNamespace = util.format("rt-sitespeed.%s.%s", rt_service.endpoint_slug, rt_config.collector.slug);
     var sp = new Sitespeed();
 
     sp.run(sp_config, function(err, result) {
@@ -68,11 +69,8 @@ exports.execute = function(payload, rt_service, rt_config, timestamp, callback) 
             return respond([], err.toString(), callback)
         }
         var statsCollector = new StatsCollector(sp.config, rt_service, rt_config, timestamp, result);
-        var aggregates = result.result.aggregates;
-        var pages = result.result.pages;
-        var domains = result.result.domains;
         var stats = statsCollector.collect();
-        console.log(stats);
+        //console.log(stats);
         respond(stats, null, callback);
     });
 };
@@ -82,9 +80,7 @@ function respond(payload, error, callback) {
 }
 
 StatsCollector.prototype.collect = function() {
-    var aggregates = result.result.aggregates;
-    var pages = result.result.pages;
-    var domains = result.result.domains;
+    return this.summaryStats();
 }
 
 StatsCollector.prototype.summaryStats = function() { 
@@ -98,10 +94,10 @@ StatsCollector.prototype.summaryStats = function() {
             metrics = ['min', 'p10', 'median', 'mean', 'p90', 'p99', 'max', 'sum'];
             aggregatedmetrics = true;
         }
-        metrics.foreach(function(metric) {
-            var measurement = "summary." + agg.title;
+        metrics.forEach(function(metric) {
+            var measurement = util.format("summary.%s.%s", agg.type, agg.id);
             if (navigationTimingNames.indexOf(agg.id) > -1) {
-                measurement = "summary.navigationtiming." + agg.title;
+                measurement = "summary.navigationtiming." + agg.id;
             }
             if (aggregatedmetrics) {
                 measurement = measurement + "." + metric;
@@ -118,7 +114,7 @@ StatsCollector.prototype.summaryStats = function() {
                 interval: self.interval,
                 unit: agg.unit,
                 target_type: "gauge",
-                value: agg.stats[metric],
+                value: parseFloat(agg.stats[metric]),
                 time: self.timestamp,
                 endpoint_id: self.endpoint_id,
                 monitor_id: self.monitor_id,
@@ -126,7 +122,7 @@ StatsCollector.prototype.summaryStats = function() {
             });
         });
 	});
-
+    return payload;
     
 }
 
