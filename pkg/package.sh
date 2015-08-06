@@ -16,6 +16,7 @@ rm -f ${DIR}/artifacts/*
 
 fpm -s dir -t deb --iteration `date +%s` \
   -n ${NAME} -v ${VERSION} \
+  --description "Raintank Remote Collector Agent" \
   -d nodejs -d nodejs-legacy -d nodejs-dev -d npm -d fping \
   -p ${DIR}/artifacts/NAME-VERSION-ITERATION_ARCH.deb \
   --config-files etc -C ${BUILD_DIR} opt etc
