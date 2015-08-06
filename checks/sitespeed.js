@@ -60,12 +60,12 @@ function StatsCollector(sp_config, rt_service, rt_config, timestamp, result) {
 exports.execute = function(payload, rt_service, rt_config, timestamp, callback) {
     var sp_config = lodash.clone(staticConfig);
     lodash.defaults(sp_config, payload, defaultConfig);
-    sp_config.graphiteNamespace = util.format("rt-sitespeed.%s.%s", sevice.slug, config.collector.slug);
+    sp_config.graphiteNamespace = util.format("rt-sitespeed.%s.%s", rt_service.slug, rt_config.collector.slug);
     var sp = new Sitespeed();
 
     sp.run(sp_config, function(err, result) {
         if (err) {
-            return respond([], err, callback)
+            return respond([], err.toString(), callback)
         }
         var statsCollector = new StatsCollector(sp.config, rt_service, rt_config, timestamp, result);
         var aggregates = result.result.aggregates;
