@@ -1,6 +1,7 @@
 test:
   pre:
     - pkg/depends.sh
+    - pkg/build.sh
   post:
     - pkg/package.sh
 general:
