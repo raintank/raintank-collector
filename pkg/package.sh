@@ -12,4 +12,4 @@ rm -f ${DIR}/artifacts/*
 
 fpm -s npm -t deb --iteration `date +%s` \
   -d nodejs -d nodejs-legacy -d nodejs-dev -d npm -d fping \
-  -p ${DIR}/artifacts/NAME-VERSION_ARCH.deb ../
+  -p ${DIR}/artifacts/NAME-VERSION-ITERATION_ARCH.deb ../
