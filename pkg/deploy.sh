@@ -8,4 +8,7 @@ if [ -z ${PACKAGECLOUD_REPO} ] ; then
   exit 1
 fi
 
-package_cloud push ${PACKAGECLOUD_REPO}/ubuntu/trusty ${DIR}/artifacts/*.deb
+: ${PACKAGECLOUD_OS:="ubuntu"}
+: ${PACKAGECLOUD_VERSION:="trusty"}
+
+package_cloud push ${PACKAGECLOUD_REPO}/${PACKAGECLOUD_OS}/${PACKAGECLOUD_VERSION} ${DIR}/artifacts/*.deb
