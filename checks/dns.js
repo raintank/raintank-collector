@@ -55,7 +55,6 @@ exports.execute = function(payload, service, config, timestamp, callback) {
     });
     req.write(post_body);
     req.end();
-    logger.info(post_body);
 }
 
 function respond(metrics, service, config, callback) {
