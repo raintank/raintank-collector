@@ -1,10 +1,11 @@
 machine:
   environment:
     GOPATH: "/home/ubuntu/.go_workspace"
-test:
-  pre:
-    - pkg/depends.sh
+dependencies:
+  override:
+    - pkg/depends.h
     - pkg/build.sh
+test:
   post:
     - pkg/package.sh
 general:
