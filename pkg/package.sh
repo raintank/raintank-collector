@@ -13,4 +13,4 @@ NAME=raintank-collector
 cd ${DIR}/artifacts
 
 fpm -s npm -t deb \
-  --iteration `date +%s` -d nodejs -d nodejs-legacy -d nodejs-dev -d npm ${DIR}/../
+  --iteration `date +%s` -d nodejs -d nodejs-legacy -d nodejs-dev -d npm --license 'Apache 2.0' -p node-raintank-collector-VERSION-ITERATION_ARCH.deb ${DIR}/../
