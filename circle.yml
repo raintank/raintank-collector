@@ -12,3 +12,7 @@ deployment:
     branch: master
     commands:
       - pkg/deploy.sh
+  staging:
+    branch: raintank-probe
+    commands:
+      - pkg/deploy.sh
