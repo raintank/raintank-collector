@@ -4,9 +4,9 @@
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 cd ${DIR}/..
 rm -rf ~/.go_workspace/*
-go get -u github.com/raintank/raintank-probe
-echo $PATH
-which raintank-probe
 ls -la ~/.go_workspace/
-cp ~/.go_workspace/bin/raintank-probe .
+go get -u github.com/raintank/raintank-probe
+ls -la ~/.go_workspace/
+ls -la ~/.go_workspace/src/
+cp $(which raintank-probe) .
 npm install
