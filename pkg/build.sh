@@ -6,5 +6,7 @@ cd ${DIR}/..
 
 go get -u github.com/raintank/raintank-probe
 echo $PATH
-cp $(which raintank-probe) .
+which raintank-probe
+ls -l ~/.go_workspace/bin/
+cp ~/.go_workspace/bin/raintank-probe .
 npm install
