@@ -7,7 +7,6 @@
   },
   "dependencies": {
     "cluster": "*",
-    "native-dns": "*",
     "net-snmp": "*",
     "socket.io-client": "*",
     "nopt": "*",
