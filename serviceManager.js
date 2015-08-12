@@ -130,15 +130,19 @@ function serviceUpdate(service) {
           BUFFER.push({
               name: util.format("litmus.%s.%s.%s", service.endpoint_slug, config.collector.slug, metricName),
               org_id: service.org_id,
-              collector: config.collector.slug,
               metric: util.format("litmus.%s", metricName),
               interval: service.frequency,
               unit: "state",
               target_type: "gauge",
               value: null,
               time: timestamp,
-              endpoint_id: service.endpoint_id,
-              monitor_id: service.id,
+              tags: {
+                endpoint_id: service.endpoint_id,
+                monitor_id: service.id,
+                collector: config.collector.slug,
+                monitor_type: type
+              }
+
           });
       }
     }

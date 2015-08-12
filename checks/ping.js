@@ -61,7 +61,12 @@ exports.execute = function(payload, service, config, timestamp, callback) {
 }
 
 function respond(metrics, service, config, callback) {
-
+    var tags = {
+        endpoint_id: service.endpoint_id,
+        monitor_id: service.id,
+        collector: config.collector.slug,
+        monitor_type: "ping"
+    };
     var payload = [];
     ['min','max','avg','mean', 'mdev'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
@@ -75,15 +80,13 @@ function respond(metrics, service, config, callback) {
                 m
             ),
             org_id: service.org_id,
-            collector: config.collector.slug,
             metric: util.format("litmus.ping.%s", m),
             interval: service.frequency,
             unit: "ms",
             target_type: "gauge",
             value: metrics[m],
             time: metrics.startTime,
-            endpoint_id: service.endpoint_id,
-            monitor_id: service.id
+            tags: tags
         });
     });
 
@@ -95,15 +98,13 @@ function respond(metrics, service, config, callback) {
             "default"
         ),
         org_id: service.org_id,
-        collector: config.collector.slug,
         metric: util.format("litmus.ping.%s", "default"),
         interval: service.frequency,
         unit: "ms",
         target_type: "gauge",
         value: metrics["mean"],
         time: metrics.startTime,
-        endpoint_id: service.endpoint_id,
-        monitor_id: service.id
+        tags: tags
     });
     payload.push({
         name: util.format(
@@ -113,15 +114,13 @@ function respond(metrics, service, config, callback) {
             "loss"
         ),
         org_id: service.org_id,
-        collector: config.collector.slug,
         metric: util.format("litmus.ping.%s", "loss"),
         interval: service.frequency,
         unit: "%",
         target_type: "gauge",
         value: metrics["loss"],
         time: metrics.startTime,
-        endpoint_id: service.endpoint_id,
-        monitor_id: service.id
+        tags: tags
     });
 
     callback(null, {success: true, results: payload, error: metrics.error});
