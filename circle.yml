@@ -13,6 +13,6 @@ general:
     - pkg/artifacts
 deployment:
   production:
-    branch: packaging_improvements
+    branch: master
     commands:
       - pkg/deploy.sh
