@@ -1,7 +1,11 @@
-test:
-  pre:
+machine:
+  environment:
+    GOPATH: "/home/ubuntu/.go_workspace"
+dependencies:
+  override:
     - pkg/depends.sh
     - pkg/build.sh
+test:
   post:
     - pkg/package.sh
 general:
@@ -9,6 +13,6 @@ general:
     - pkg/artifacts
 deployment:
   production:
-    branch: master
+    branch: packaging_improvements
     commands:
       - pkg/deploy.sh
