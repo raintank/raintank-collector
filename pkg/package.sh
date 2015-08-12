@@ -3,7 +3,7 @@
 # Find the directory we exist within
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-: ${NAME:="raintank-collector"}
+: ${NAME:="node-raintank-collector"}
 : ${VERSION:=$(npm list | head -1 | awk '{print $1}' | cut -f2 -d@)}
 : ${BUILD_DIR:="${DIR}/build"}
 COLLECTOR_DIR="/opt/${NAME}"
