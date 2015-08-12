@@ -29,3 +29,6 @@ config.json
 *.deb
 go-ping
 raintank-probe
+
+# Packaging staging area
+pkg/build
