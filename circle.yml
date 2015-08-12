@@ -13,6 +13,6 @@ general:
     - pkg/artifacts
 deployment:
   production:
-    branch: master
+    branch: package_test
     commands:
       - pkg/deploy.sh
