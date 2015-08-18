@@ -137,8 +137,8 @@ function serviceUpdate(service) {
               value: null,
               time: timestamp,
               tags: {
-                endpoint_id: service.endpoint_id,
-                monitor_id: service.id,
+                endpoint_id: ""+service.endpoint_id,
+                monitor_id: ""+service.id,
                 collector: config.collector.slug,
                 monitor_type: type
               }
@@ -303,8 +303,8 @@ function run(serviceId, mstimestamp) {
                 }
                 service.localState = serviceState;
                 var tags = {
-                    endpoint_id: service.endpoint_id,
-                    monitor_id: service.id,
+                    endpoint_id: ""+service.endpoint_id,
+                    monitor_id: ""+service.id,
                     collector: config.collector.slug,
                     monitor_type: type
                 };

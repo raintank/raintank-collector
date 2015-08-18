@@ -59,8 +59,8 @@ exports.execute = function(payload, service, config, timestamp, callback) {
 
 function respond(metrics, service, config, callback) {
     var tags = {
-        endpoint_id: service.endpoint_id,
-        monitor_id: service.id,
+        endpoint_id: ""+service.endpoint_id,
+        monitor_id: ""+service.id,
         collector: config.collector.slug,
         monitor_type: "dns"
     };
