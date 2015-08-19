@@ -255,15 +255,17 @@ function run(serviceId, mstimestamp) {
                         source: "network_collector",
                         event_type: "monitor_state",
                         org_id: service.org_id,
-                        endpoint_id: service.endpoint_id,
-                        endpoint: service.endpoint_slug,
-                        collector: config.collector.slug,
-                        collector_id: config.collector.id,
-                        monitor_id: service.id,
-                        monitor_type: type,
                         severity: 'ERROR',
                         message: response.error,
-                        timestamp: timestamp * 1000
+                        timestamp: timestamp * 1000,
+                        tags: {
+                            endpoint_id: ""+service.endpoint_id,
+                            endpoint: service.endpoint_slug,
+                            collector: config.collector.slug,
+                            collector_id: ""+config.collector.id,
+                            monitor_id: ""+service.id,
+                            monitor_type: type
+                        }
                     };
                     //console.log(eventPayload);
                     compress(eventPayload, function(err, buffer) {
@@ -282,15 +284,17 @@ function run(serviceId, mstimestamp) {
                         source: "network_collector",
                         event_type: "monitor_state",
                         org_id: service.org_id,
-                        endpoint_id: service.endpoint_id,
-                        endpoint: service.endpoint_slug,
-                        collector: config.collector.slug,
-                        collector_id: config.collector.id,
-                        monitor_id: service.id,
-                        monitor_type: type,
                         severity: 'OK',
                         message: "Monitor now OK.",
-                        timestamp: timestamp * 1000
+                        timestamp: timestamp * 1000,
+                        tags: {
+                            endpoint_id: ""+service.endpoint_id,
+                            endpoint: service.endpoint_slug,
+                            collector: config.collector.slug,
+                            collector_id: ""+config.collector.id,
+                            monitor_id: ""+service.id,
+                            monitor_type: type
+                        }
                     };
                     //console.log(eventPayload);
                     compress(eventPayload, function(err, buffer) {
