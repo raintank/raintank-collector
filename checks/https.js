@@ -181,14 +181,14 @@ function respond(metrics, service, config, callback) {
         }
         payload.push({
             name: util.format(
-                "litmus.%s.%s.http.%s",
+                "litmus.%s.%s.https.%s",
                 service.endpoint_slug,
                 config.collector.slug,
                 m
             ),
             org_id: service.org_id,
             collector: config.collector.slug,
-            metric: util.format("litmus.http.%s", m),
+            metric: util.format("litmus.https.%s", m),
             interval: service.frequency,
             unit: "ms",
             target_type: "gauge",
@@ -201,13 +201,13 @@ function respond(metrics, service, config, callback) {
     
     payload.push({
         name: util.format(
-            "litmus.%s.%s.http.default",
+            "litmus.%s.%s.https.default",
             service.endpoint_slug,
             config.collector.slug
         ),
         org_id: service.org_id,
         collector: config.collector.slug,
-        metric: "litmus.http.default",
+        metric: "litmus.https.default",
         interval: service.frequency,
         unit: "ms",
         target_type: "gauge",
@@ -222,13 +222,13 @@ function respond(metrics, service, config, callback) {
     }
     payload.push({
         name: util.format(
-            "litmus.%s.%s.http.dataLength",
+            "litmus.%s.%s.https.dataLength",
             service.endpoint_slug,
             config.collector.slug
         ),
         org_id: service.org_id,
         collector: config.collector.slug,
-        metric: "litmus.http.dataLength",
+        metric: "litmus.https.dataLength",
         interval: service.frequency,
         unit: "bytes",
         target_type: "gauge",
@@ -241,13 +241,13 @@ function respond(metrics, service, config, callback) {
     if (metrics['dataLength'] > 0 && metrics['recv'] > 0) {
         payload.push({
             name: util.format(
-                "litmus.%s.%s.http.throughput",
+                "litmus.%s.%s.https.throughput",
                 service.endpoint_slug,
                 config.collector.slug
             ),
             org_id: service.org_id,
             collector: config.collector.slug,
-            metric: "litmus.http.throughput",
+            metric: "litmus.https.throughput",
             interval: service.frequency,
             unit: "bytes",
             target_type: "gauge",
@@ -260,13 +260,13 @@ function respond(metrics, service, config, callback) {
 
     payload.push({
         name: util.format(
-            "litmus.%s.%s.http.statusCode",
+            "litmus.%s.%s.https.statusCode",
             service.endpoint_slug,
             config.collector.slug
         ),
         org_id: service.org_id,
         collector: config.collector.slug,
-        metric: "litmus.http.statusCode",
+        metric: "litmus.https.statusCode",
         interval: service.frequency,
         unit: "code",
         target_type: "gauge",

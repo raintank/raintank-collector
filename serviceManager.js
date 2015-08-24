@@ -145,6 +145,12 @@ function serviceUpdate(service) {
     logger.info("got serviceUpdate message for service: %s", service.id);
     logger.debug(service);
     if (service.updated >= currentService.updated) {
+        if (!service.enabled) {
+            if (currentService) {
+                _checkDelete(service.id);
+            }
+            return;
+        }
         service.localState = currentService.state;
 
         if ('timer' in currentService) {
