@@ -18,11 +18,19 @@ The results of each test are then transfered back to the Raintank API where they
   ```
 git clone https://github.com/raintank/raintank-collector.git
   ```
+  * Install Go. https://golang.org/doc/install. Once you've installed Go, you'll need to configure your workspace like so: https://golang.org/doc/code.html#Workspaces
+  * Install `raintank_probe`, which has taken over some of raintank_collector's functionality.
+  ```
+go get github.com/raintank/raintank-probe
+  ```
+  * Copy `raintank-probe` to `raintank-collector`'s directory.
+  ```
+cp $(which raintank-probe) .
+  ```
   * Install all of the dependent node_modules
   ```
 npm install
   ```
-  * Install fping.  Installation depends on your linux distribution. http://fping.org/
   * Create a config file using etc/config.json as a template, with the collector name created in step 1 and the ApiKey created in step 2.
   ```
 {
@@ -32,7 +40,7 @@ npm install
 	"numCPUs": 1,
 	"serverUrl": "https://portal.raintank.io",
 	"apiKey": "<Your API KEY>",
-	"pingServerPort": 8080
+	"probeServerPort": 8080
 }
   ```
   * Then start the app.
