@@ -12,3 +12,4 @@ fi
 : ${PACKAGECLOUD_VERSION:="trusty"}
 
 package_cloud push ${PACKAGECLOUD_REPO}/${PACKAGECLOUD_OS}/${PACKAGECLOUD_VERSION} ${DIR}/artifacts/*.deb
+git push --tags

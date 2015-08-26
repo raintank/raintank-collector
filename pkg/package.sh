@@ -14,7 +14,6 @@ TAG="pkg-${VERSION}-${ITERATION}"
 
 cd ${DIR}
 git tag $TAG
-git push --tags
 
 mkdir -p ${DIR}/artifacts
 rm -f ${DIR}/artifacts/*
