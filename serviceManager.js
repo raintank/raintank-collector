@@ -123,6 +123,12 @@ function serviceUpdate(service) {
           - (updated_ts % service.frequency)
           + service.offset)
       var type = monitorTypes[service.monitor_type_id].name.toLowerCase();
+      var tags = [
+        util.format("endpoint_id:%d", service.endpoint_id),
+        util.format("monitor_id:%d", service.id),
+        util.format("collector:%s", config.collector.slug)
+      ];
+
       for (var state=0; state < states.length; state++) {
           var metricName = util.format("%s.%s_state", type, states[state]);
           var active = null;
@@ -136,13 +142,7 @@ function serviceUpdate(service) {
               target_type: "gauge",
               value: null,
               time: timestamp,
-              tags: {
-                endpoint_id: ""+service.endpoint_id,
-                monitor_id: ""+service.id,
-                collector: config.collector.slug,
-                monitor_type: type
-              }
-
+              tags: tags
           });
       }
     }
@@ -258,14 +258,14 @@ function run(serviceId, mstimestamp) {
                         severity: 'ERROR',
                         message: response.error,
                         timestamp: timestamp * 1000,
-                        tags: {
-                            endpoint_id: ""+service.endpoint_id,
-                            endpoint: service.endpoint_slug,
-                            collector: config.collector.slug,
-                            collector_id: ""+config.collector.id,
-                            monitor_id: ""+service.id,
-                            monitor_type: type
-                        }
+                        tags: [
+                            util.format("endpoint_id:%d", service.endpoint_id),
+                            util.format("endpoint:%s", service.endpoint_slug),
+                            util.format("monitor_id:%d", service.id),
+                            util.format("collector_id:%d", config.collector.id),
+                            util.format("collector:%s", config.collector.slug),
+                            util.format("monitor_type:%s", type)
+                        ]
                     };
                     //console.log(eventPayload);
                     compress(eventPayload, function(err, buffer) {
@@ -287,14 +287,14 @@ function run(serviceId, mstimestamp) {
                         severity: 'OK',
                         message: "Monitor now OK.",
                         timestamp: timestamp * 1000,
-                        tags: {
-                            endpoint_id: ""+service.endpoint_id,
-                            endpoint: service.endpoint_slug,
-                            collector: config.collector.slug,
-                            collector_id: ""+config.collector.id,
-                            monitor_id: ""+service.id,
-                            monitor_type: type
-                        }
+                        tags: [
+                            util.format("endpoint_id:%d", service.endpoint_id),
+                            util.format("endpoint:%s", service.endpoint_slug),
+                            util.format("monitor_id:%d", service.id),
+                            util.format("collector_id:%d", config.collector.id),
+                            util.format("collector:%s", config.collector.slug),
+                            util.format("monitor_type:%s", type)
+                        ]
                     };
                     //console.log(eventPayload);
                     compress(eventPayload, function(err, buffer) {
@@ -306,12 +306,11 @@ function run(serviceId, mstimestamp) {
                     });
                 }
                 service.localState = serviceState;
-                var tags = {
-                    endpoint_id: ""+service.endpoint_id,
-                    monitor_id: ""+service.id,
-                    collector: config.collector.slug,
-                    monitor_type: type
-                };
+                var tags = [
+                    util.format("endpoint_id:%d", service.endpoint_id),
+                    util.format("monitor_id:%d", service.id),
+                    util.format("collector:%s", config.collector.slug),
+                ]
                 var states = ["ok", "warn", 'error'];
                 for (var state=0; state < states.length; state++) {
                     var metricName = util.format("%s.%s_state", type, states[state]);
