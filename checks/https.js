@@ -174,12 +174,11 @@ exports.execute = function(payload, service, config, timestamp, callback) {
 
 function respond(metrics, service, config, callback) {
     var payload = [];
-    var tags = {
-        endpoint_id: ""+service.endpoint_id,
-        monitor_id: ""+service.id,
-        collector: config.collector.slug,
-        monitor_type: "https"
-    };
+    var tags = [
+        util.format("endpoint_id:%d", service.endpoint_id),
+        util.format("monitor_id:%d", service.id),
+        util.format("collector:%s", config.collector.slug),
+    ];
 
     ['dns','connect','send','wait','recv', 'total'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {

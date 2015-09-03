@@ -61,12 +61,11 @@ exports.execute = function(payload, service, config, timestamp, callback) {
 }
 
 function respond(metrics, service, config, callback) {
-    var tags = {
-        endpoint_id: ""+service.endpoint_id,
-        monitor_id: ""+service.id,
-        collector: config.collector.slug,
-        monitor_type: "ping"
-    };
+    var tags = [
+        util.format("endpoint_id:%d", service.endpoint_id),
+        util.format("monitor_id:%d", service.id),
+        util.format("collector:%s", config.collector.slug),
+    ];
     var payload = [];
     ['min','max','avg','mean', 'mdev'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
