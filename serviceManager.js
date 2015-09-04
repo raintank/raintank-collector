@@ -103,7 +103,9 @@ var init = function() {
                 return;
             }
             socket.emit('results', buffer);
+            logger.info(buffer)
         });
+
     }, 1000);
 }
 
@@ -123,6 +125,12 @@ function serviceUpdate(service) {
           - (updated_ts % service.frequency)
           + service.offset)
       var type = monitorTypes[service.monitor_type_id].name.toLowerCase();
+      var tags = [
+        util.format("endpoint_id:%d", service.endpoint_id),
+        util.format("monitor_id:%d", service.id),
+        util.format("collector:%s", config.collector.slug)
+      ];
+
       for (var state=0; state < states.length; state++) {
           var metricName = util.format("%s.%s_state", type, states[state]);
           var active = null;
@@ -130,15 +138,13 @@ function serviceUpdate(service) {
           BUFFER.push({
               name: util.format("litmus.%s.%s.%s", service.endpoint_slug, config.collector.slug, metricName),
               org_id: service.org_id,
-              collector: config.collector.slug,
               metric: util.format("litmus.%s", metricName),
               interval: service.frequency,
               unit: "state",
               target_type: "gauge",
               value: null,
               time: timestamp,
-              endpoint_id: service.endpoint_id,
-              monitor_id: service.id,
+              tags: tags
           });
       }
     }
@@ -251,15 +257,17 @@ function run(serviceId, mstimestamp) {
                         source: "network_collector",
                         event_type: "monitor_state",
                         org_id: service.org_id,
-                        endpoint_id: service.endpoint_id,
-                        endpoint: service.endpoint_slug,
-                        collector: config.collector.slug,
-                        collector_id: config.collector.id,
-                        monitor_id: service.id,
-                        monitor_type: type,
                         severity: 'ERROR',
                         message: response.error,
-                        timestamp: timestamp * 1000
+                        timestamp: timestamp * 1000,
+                        tags: [
+                            util.format("endpoint_id:%d", service.endpoint_id),
+                            util.format("endpoint:%s", service.endpoint_slug),
+                            util.format("monitor_id:%d", service.id),
+                            util.format("collector_id:%d", config.collector.id),
+                            util.format("collector:%s", config.collector.slug),
+                            util.format("monitor_type:%s", type)
+                        ]
                     };
                     //console.log(eventPayload);
                     compress(eventPayload, function(err, buffer) {
@@ -278,15 +286,17 @@ function run(serviceId, mstimestamp) {
                         source: "network_collector",
                         event_type: "monitor_state",
                         org_id: service.org_id,
-                        endpoint_id: service.endpoint_id,
-                        endpoint: service.endpoint_slug,
-                        collector: config.collector.slug,
-                        collector_id: config.collector.id,
-                        monitor_id: service.id,
-                        monitor_type: type,
                         severity: 'OK',
                         message: "Monitor now OK.",
-                        timestamp: timestamp * 1000
+                        timestamp: timestamp * 1000,
+                        tags: [
+                            util.format("endpoint_id:%d", service.endpoint_id),
+                            util.format("endpoint:%s", service.endpoint_slug),
+                            util.format("monitor_id:%d", service.id),
+                            util.format("collector_id:%d", config.collector.id),
+                            util.format("collector:%s", config.collector.slug),
+                            util.format("monitor_type:%s", type)
+                        ]
                     };
                     //console.log(eventPayload);
                     compress(eventPayload, function(err, buffer) {
@@ -298,6 +308,11 @@ function run(serviceId, mstimestamp) {
                     });
                 }
                 service.localState = serviceState;
+                var tags = [
+                    util.format("endpoint_id:%d", service.endpoint_id),
+                    util.format("monitor_id:%d", service.id),
+                    util.format("collector:%s", config.collector.slug),
+                ]
                 var states = ["ok", "warn", 'error'];
                 for (var state=0; state < states.length; state++) {
                     var metricName = util.format("%s.%s_state", type, states[state]);
@@ -308,15 +323,13 @@ function run(serviceId, mstimestamp) {
                     BUFFER.push({
                         name: util.format("litmus.%s.%s.%s", service.endpoint_slug, config.collector.slug, metricName),
                         org_id: service.org_id,
-                        collector: config.collector.slug,
                         metric: util.format("litmus.%s", metricName),
                         interval: service.frequency,
                         unit: "state",
                         target_type: "gauge",
                         value: active,
                         time: timestamp,
-                        endpoint_id: service.endpoint_id,
-                        monitor_id: service.id,
+                        tags: tags
                     });
                 }
             }

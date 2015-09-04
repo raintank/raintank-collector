@@ -174,6 +174,11 @@ exports.execute = function(payload, service, config, timestamp, callback) {
 
 function respond(metrics, service, config, callback) {
     var payload = [];
+    var tags = [
+        util.format("endpoint_id:%d", service.endpoint_id),
+        util.format("monitor_id:%d", service.id),
+        util.format("collector:%s", config.collector.slug),
+    ];
 
     ['dns','connect','send','wait','recv', 'total'].forEach(function(m) {
         if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
@@ -187,15 +192,13 @@ function respond(metrics, service, config, callback) {
                 m
             ),
             org_id: service.org_id,
-            collector: config.collector.slug,
             metric: util.format("litmus.https.%s", m),
             interval: service.frequency,
             unit: "ms",
             target_type: "gauge",
             value: metrics[m],
             time: metrics.startTime,
-            endpoint_id: service.endpoint_id,
-            monitor_id: service.id
+            tags: tags
         });
     });
     
@@ -206,15 +209,13 @@ function respond(metrics, service, config, callback) {
             config.collector.slug
         ),
         org_id: service.org_id,
-        collector: config.collector.slug,
         metric: "litmus.https.default",
         interval: service.frequency,
         unit: "ms",
         target_type: "gauge",
         value: metrics['total'],
         time: metrics.startTime,
-        endpoint_id: service.endpoint_id,
-        monitor_id: service.id
+        tags: tags
     });
 
     if (!isNaN(metrics['dataLength']) && metrics['dataLength'] > 0 ) {
@@ -227,15 +228,13 @@ function respond(metrics, service, config, callback) {
             config.collector.slug
         ),
         org_id: service.org_id,
-        collector: config.collector.slug,
         metric: "litmus.https.dataLength",
         interval: service.frequency,
         unit: "bytes",
         target_type: "gauge",
         value: metrics['dataLength'],
         time: metrics.startTime,
-        endpoint_id: service.endpoint_id,
-        monitor_id: service.id
+        tags: tags
     });
 
     if (metrics['dataLength'] > 0 && metrics['recv'] > 0) {
@@ -246,15 +245,13 @@ function respond(metrics, service, config, callback) {
                 config.collector.slug
             ),
             org_id: service.org_id,
-            collector: config.collector.slug,
             metric: "litmus.https.throughput",
             interval: service.frequency,
             unit: "bytes",
             target_type: "gauge",
             value: metrics['dataLength']/(metrics['recv']/1000),
             time: metrics.startTime,
-            endpoint_id: service.endpoint_id,
-            monitor_id: service.id
+            tags: tags
         });
     }
 
@@ -265,15 +262,13 @@ function respond(metrics, service, config, callback) {
             config.collector.slug
         ),
         org_id: service.org_id,
-        collector: config.collector.slug,
         metric: "litmus.https.statusCode",
         interval: service.frequency,
         unit: "code",
         target_type: "gauge",
         value: metrics['statusCode'],
         time: metrics.startTime,
-        endpoint_id: service.endpoint_id,
-        monitor_id: service.id
+        tags: tags
     });
 
     callback(null, {success: true, results: payload, error: metrics.error});

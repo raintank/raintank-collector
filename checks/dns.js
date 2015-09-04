@@ -58,6 +58,11 @@ exports.execute = function(payload, service, config, timestamp, callback) {
 }
 
 function respond(metrics, service, config, callback) {
+    var tags = [
+        util.format("endpoint_id:%d", service.endpoint_id),
+        util.format("monitor_id:%d", service.id),
+        util.format("collector:%s", config.collector.slug),
+    ];
     var payload = [
         {
             name: util.format(
@@ -66,15 +71,13 @@ function respond(metrics, service, config, callback) {
                 config.collector.slug
             ),
             org_id: service.org_id,
-            collector: config.collector.slug,
             metric: "litmus.dns.time",
             interval: service.frequency,
             unit: "ms",
             target_type: "gauge",
             value: Math.round(metrics.time * 100) / 100,
             time: metrics.startTime,
-            endpoint_id: service.endpoint_id,
-            monitor_id: service.id
+            tags: tags
         },
         {
             name: util.format(
@@ -83,15 +86,13 @@ function respond(metrics, service, config, callback) {
                 config.collector.slug
             ),
             org_id: service.org_id,
-            collector: config.collector.slug,
             metric: "litmus.dns.default",
             interval: service.frequency,
             unit: "ms",
             target_type: "gauge",
             value: Math.round(metrics.time * 100) / 100,
             time: metrics.startTime,
-            endpoint_id: service.endpoint_id,
-            monitor_id: service.id
+            tags: tags
         },
         {
             name: util.format(
@@ -100,15 +101,13 @@ function respond(metrics, service, config, callback) {
                 config.collector.slug
             ),
             org_id: service.org_id,
-            collector: config.collector.slug,
             metric: "litmus.dns.ttl",
             interval: service.frequency,
             unit: "s",
             target_type: "gauge",
             value: metrics.ttl,
             time: metrics.startTime,
-            endpoint_id: service.endpoint_id,
-            monitor_id: service.id
+            tags: tags
         },
         {
             name: util.format(
@@ -117,15 +116,13 @@ function respond(metrics, service, config, callback) {
                 config.collector.slug
             ),
             org_id: service.org_id,
-            collector: config.collector.slug,
             metric: "litmus.dns.answers",
             interval: service.frequency,
             unit: "count",
             target_type: "gauge",
             value: metrics.answers,
             time: metrics.startTime,
-            endpoint_id: service.endpoint_id,
-            monitor_id: service.id
+            tags: tags
         }
     ];
     callback(null, {success: true, results: payload, error: metrics.error});
