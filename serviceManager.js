@@ -35,7 +35,7 @@ var init = function() {
     });
 
     socket.on("ready", function(resp) {
-        logger.info("recieved ready event from controller");
+        logger.info("received ready event from controller");
         config.collector = resp.collector;
         logger.info("collector.enabled is: " + config.collector.enabled);
         resp.monitor_types.forEach(function(type) {
