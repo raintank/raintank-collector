@@ -103,7 +103,6 @@ var init = function() {
                 return;
             }
             socket.emit('results', buffer);
-            logger.info(buffer)
         });
 
     }, 1000);
