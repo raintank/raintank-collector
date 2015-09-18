@@ -13,6 +13,7 @@ var pjson = require('./package.json');
 var serviceCache = {};
 var socket;
 var metricCount = 0;
+var eventCount = 0;
 var BUFFER = [];
 var ready = false;
 var monitorTypes = {};
@@ -82,8 +83,9 @@ var init = function() {
 
     setInterval(function() {
         if (config.collector.enabled) {
-            logger.debug("Processing %s metrics/second %s checks", metricCount/10, Object.keys(serviceCache).length);
+            logger.debug("Processing %s metrics/second, %s events/second from %s checks", metricCount/10, eventCount/10, Object.keys(serviceCache).length);
             metricCount = 0;
+            eventCount = 0;
         }
     }, 10000);
 
@@ -148,7 +150,7 @@ function serviceUpdate(service) {
       }
     }
     logger.info("got serviceUpdate message for service: %s", service.id);
-    logger.debug(service);
+    //logger.debug(service);
     if (service.updated >= currentService.updated) {
         if (!service.enabled) {
             if (currentService) {
@@ -167,8 +169,7 @@ function serviceUpdate(service) {
         serviceCache[service.id] = service;
         runNext(service.id);
     } else {
-        logger.error("Service to update is newer then what was provided." );
-        logger.error("%s\n%s", service.updated, currentService.updated);
+        logger.error("Service to update is newer then what was provided. %s : %s", service.updated, currentService.updated);
     }
 }
 
@@ -250,7 +251,7 @@ function run(serviceId, mstimestamp) {
                 }
                 var serviceState = 0;
                 if (response.error ) {
-                    logger.debug("error in check %s. sending event.", service.id)
+                    //logger.debug("error in check %s. sending event.", service.id)
                     serviceState = 2;
                     var eventPayload = {
                         source: "network_collector",
@@ -274,13 +275,14 @@ function run(serviceId, mstimestamp) {
                             logger.error("Error compressing payload.", err);
                             return;
                         }
+                        eventCount++;
                         socket.emit('event', buffer);
                     });
 
                 }
 
                 if (serviceState === 0 && service.localState !== 0) {
-                    logger.debug("check %s state transitioned from %s to %s", service.id, service.localState, serviceState);
+                    //logger.debug("check %s state transitioned from %s to %s", service.id, service.localState, serviceState);
                     var eventPayload = {
                         source: "network_collector",
                         event_type: "monitor_state",
@@ -303,6 +305,7 @@ function run(serviceId, mstimestamp) {
                             logger.error("Error compressing payload.", err);
                             return;
                         }
+                        eventCount++;
                         socket.emit('event', buffer);
                     });
                 }
