@@ -1,8 +1,10 @@
 'use strict';
-var dns = require('dns');
 var http = require('http');
-var zlib = require('zlib');
+var config = require('../config').config;
 var util = require('util');
+http.globalAgent.maxSockets = 1000;
+var log4js = require('log4js');
+var logger = log4js.getLogger('PID:'+process.pid);
 
 exports.execute = function(payload, service, config, timestamp, callback) {
     var profile = {
