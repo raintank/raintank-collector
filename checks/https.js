@@ -123,7 +123,7 @@ function respond(metrics, service, config, callback) {
 
     payload.push({
         name: util.format(
-            "litmus.%s.%s.http.throughput",
+            "litmus.%s.%s.https.throughput",
             service.endpoint_slug,
             config.collector.slug
         ),
