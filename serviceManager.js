@@ -213,9 +213,9 @@ function serviceDelete(service) {
 function run(serviceId, mstimestamp) {
     var delay = new Date().getTime() - mstimestamp;
     if (delay > 100) {
-      logger.error("check delay is " + delay + "ms");
+      logger.warn("check delay is " + delay + "ms");
     } else if (delay > 30) {
-      logger.warn("check delay is "+ delay + "ms");
+      logger.info("check delay is "+ delay + "ms");
     }
     //logger.debug(util.format("running check %d now.", serviceId));
     var service = serviceCache[serviceId];
