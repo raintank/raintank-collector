@@ -214,7 +214,7 @@ function run(serviceId, mstimestamp) {
     var delay = new Date().getTime() - mstimestamp;
     if (delay > 100) {
       logger.warn("check delay is " + delay + "ms. Skipping check");
-      runNext(service.id);
+      runNext(serviceId);
       return;
     } else if (delay > 30) {
       logger.info("check delay is "+ delay + "ms");
