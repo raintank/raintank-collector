@@ -116,44 +116,48 @@ function serviceUpdate(service) {
     service.updated = new Date(service.updated);
 
     currentService = serviceCache[service.id];
+    var newSerivce = false;
     if (!currentService) {
-      currentService = service;
-      //send state metrics to so graphite knows this check exists.
-      var states = ["ok", "warn", 'error'];
-      // set the timestamp to be before now, but at the correct offset.
-      var updated_ts = Math.floor(service.updated.getTime()/1000);
-      var timestamp = (updated_ts - service.frequency
-          - (updated_ts % service.frequency)
-          + service.offset)
-      var type = monitorTypes[service.monitor_type_id].name.toLowerCase();
-      var tags = [
-        util.format("endpoint_id:%d", service.endpoint_id),
-        util.format("monitor_id:%d", service.id),
-        util.format("collector:%s", config.collector.slug)
-      ];
+        newService = true;
+        currentService = service;
+        if (!config.backfill) {
+            //send state metrics to so graphite knows this check exists.
+            var states = ["ok", "warn", 'error'];
+            // set the timestamp to be before now, but at the correct offset.
+            var updated_ts = Math.floor(service.updated.getTime()/1000);
+            var timestamp = (updated_ts - service.frequency
+                - (updated_ts % service.frequency)
+                + service.offset)
+            var type = monitorTypes[service.monitor_type_id].name.toLowerCase();
+            var tags = [
+                util.format("endpoint_id:%d", service.endpoint_id),
+                util.format("monitor_id:%d", service.id),
+                util.format("collector:%s", config.collector.slug)
+            ];
 
-      for (var state=0; state < states.length; state++) {
-          var metricName = util.format("%s.%s_state", type, states[state]);
-          var active = null;
-          logger.debug("initializing metric: ", metricName);
-          BUFFER.push({
-              name: util.format("litmus.%s.%s.%s", service.endpoint_slug, config.collector.slug, metricName),
-              org_id: service.org_id,
-              metric: util.format("litmus.%s", metricName),
-              interval: service.frequency,
-              unit: "state",
-              target_type: "gauge",
-              value: null,
-              time: timestamp,
-              tags: tags
-          });
-      }
+            for (var state=0; state < states.length; state++) {
+                var metricName = util.format("%s.%s_state", type, states[state]);
+                var active = null;
+                logger.debug("initializing metric: ", metricName);
+                BUFFER.push({
+                    name: util.format("litmus.%s.%s.%s", service.endpoint_slug, config.collector.slug, metricName),
+                    org_id: service.org_id,
+                    metric: util.format("litmus.%s", metricName),
+                    interval: service.frequency,
+                    unit: "state",
+                    target_type: "gauge",
+                    value: null,
+                    time: timestamp,
+                    tags: tags
+                });
+            }
+        }
     }
     logger.info("got serviceUpdate message for service: %s", service.id);
     //logger.debug(service);
     if (service.updated >= currentService.updated) {
         if (!service.enabled) {
-            if (currentService) {
+            if (!newService) {
                 _checkDelete(service.id);
             }
             return;
@@ -167,7 +171,12 @@ function serviceUpdate(service) {
         }
 
         serviceCache[service.id] = service;
-        runNext(service.id);
+        if (config.backfill && newService) {
+            runBackfill(service.id);
+        } else {
+            runNext(service.id);
+        }
+        
     } else {
         logger.error("Service to update is newer then what was provided. %s : %s", service.updated, currentService.updated);
     }
@@ -210,7 +219,7 @@ function serviceDelete(service) {
     }
 }
 
-function run(serviceId, mstimestamp) {
+function run(serviceId, mstimestamp, next) {
     var delay = new Date().getTime() - mstimestamp;
     if (delay > 100) {
       logger.warn("check delay is " + delay + "ms. Skipping check");
@@ -242,14 +251,14 @@ function run(serviceId, mstimestamp) {
             settings["timeout"] = 10;
         }
         checks[type].execute(settings, service, config, timestamp, function(err, response) {
+
             if  (response.success) {
+    
                 var events = [];
-                var metrics = response.results;
+                var metrics = [];
                 //console.log(metrics);
-                if (metrics) {
-                    metrics.forEach(function(m){
-                        BUFFER.push(m);
-                    });
+                if (response.results) {
+                    metrics = response.results
                 }
                 var serviceState = 0;
                 if (response.error ) {
@@ -324,7 +333,7 @@ function run(serviceId, mstimestamp) {
                     if (state == serviceState) {
                         active = 1;
                     }
-                    BUFFER.push({
+                    metrics.push({
                         name: util.format("litmus.%s.%s.%s", service.endpoint_slug, config.collector.slug, metricName),
                         org_id: service.org_id,
                         metric: util.format("litmus.%s", metricName),
@@ -336,9 +345,40 @@ function run(serviceId, mstimestamp) {
                         tags: tags
                     });
                 }
+                next(metrics);
             }
         });
     }
+}
+
+function sendMetrics(metrics) {
+    metrics.forEach(function(m){
+        BUFFER.push(m);
+    });
+}
+
+function backfillMetrics(metrics) {
+    metrics.forEach(function(m){
+        //new metric seen for the first time, lets backfill data
+        logger.info("backfilling data for %d.%s", m.org_id, m.name);
+        var ts = m.time - config.backfill;
+        while (ts < m.time) {
+            var metric = JSON.parse(JSON.stringify(m));
+            if (metric.unit == "bytes" || metric.unit == "ms") {
+                var x = ts % 3600
+                var ratio =  Math.sin((x/3600)*2*Math.PI)
+                var delta = 0;
+                if (ratio !== 0) {
+                    delta = (ratio / 5) * metric.value;
+                }
+                metric.value = metric.value + delta
+            }
+            metric.time = ts;
+            BUFFER.push(metric);
+            ts += m.interval;
+        }
+        BUFFER.push(m);
+    });
 }
 
 function compress(payload, cb) {
@@ -361,7 +401,23 @@ function runNext(serviceId) {
     var next = wait + now;
     //logger.debug(util.format("running check %s again in %d ms", serviceId, wait));
     service.timer = setTimeout(function() {
-        run(service.id, next);
+        run(service.id, next, sendMetrics);
     }, wait);
 }
 
+function runBackfill(serviceId) {
+    var service = serviceCache[serviceId];
+    clearTimeout(service.timer);
+    var now = new Date().getTime();
+
+    var wait = (((service.frequency + service.offset) * 1000) - (now % (service.frequency * 1000))) % (service.frequency * 1000);
+    if (wait <1) {
+      wait = wait + (service.frequency * 1000);
+    }
+    wait += Math.random()*990;
+    var next = wait + now;
+    //logger.debug(util.format("running check %s again in %d ms", serviceId, wait));
+    service.timer = setTimeout(function() {
+        run(service.id, next, backfillMetrics);
+    }, wait);
+}
