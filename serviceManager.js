@@ -361,8 +361,9 @@ function backfillMetrics(metrics) {
     metrics.forEach(function(m){
         //new metric seen for the first time, lets backfill data
         logger.info("backfilling data for %d.%s", m.org_id, m.name);
+        var start = new Date();
         var ts = m.time - config.backfill;
-        while (ts < m.time) {
+        var generate = function() {
             var metric = JSON.parse(JSON.stringify(m));
             if (metric.unit == "bytes" || metric.unit == "ms") {
                 var x = ts % 3600
@@ -376,8 +377,15 @@ function backfillMetrics(metrics) {
             metric.time = ts;
             BUFFER.push(metric);
             ts += m.interval;
-        }
-        BUFFER.push(m);
+            if (ts < m.time) {
+                setImmediate(generate);
+            } else {
+                var duration = new Date().getTime() - start.getTime();
+                logger.info("backfill took %d", duration);
+                BUFFER.push(m);
+            }
+        };
+        generate();
     });
 }
 
