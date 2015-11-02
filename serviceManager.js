@@ -223,8 +223,10 @@ function run(serviceId, mstimestamp, next) {
     var delay = new Date().getTime() - mstimestamp;
     if (delay > 100) {
       logger.warn("check delay is " + delay + "ms. Skipping check");
-      runNext(serviceId);
-      return;
+      if (!config.backfill) {
+        runNext(serviceId);
+        return;
+      }
     } else if (delay > 30) {
       logger.info("check delay is "+ delay + "ms");
     }
@@ -345,19 +347,23 @@ function run(serviceId, mstimestamp, next) {
                         tags: tags
                     });
                 }
-                next(metrics);
+                next(serviceId, metrics);
             }
         });
     }
 }
 
-function sendMetrics(metrics) {
+function sendMetrics(serviceId, metrics) {
     metrics.forEach(function(m){
         BUFFER.push(m);
     });
 }
 
-function backfillMetrics(metrics) {
+function backfillMetrics(serviceId, metrics) {
+    // prevent the check from running while we backfill.
+    var service = serviceCache[serviceId];
+    clearTimeout(service.timer);
+
     metrics.forEach(function(m){
         //new metric seen for the first time, lets backfill data
         logger.info("backfilling data for %d.%s", m.org_id, m.name);
@@ -377,12 +383,23 @@ function backfillMetrics(metrics) {
             metric.time = ts;
             BUFFER.push(metric);
             ts += m.interval;
-            if (ts < m.time) {
+
+            // get ts of where data should exist to.
+            var now = new Date().getTime();
+            var wait = (((service.frequency + service.offset) * 1000) - (now % (service.frequency * 1000))) % (service.frequency * 1000);
+            if (wait <1) {
+              wait = wait + (service.frequency * 1000);
+            }
+            wait += Math.random()*990;
+            var next = (wait + now - (service.frequency * 1000))/1000;
+
+            if (ts < next) {
                 setImmediate(generate);
             } else {
                 var duration = new Date().getTime() - start.getTime();
                 logger.info("backfill took %d", duration);
                 BUFFER.push(m);
+                runNext(serviceId);
             }
         };
         generate();
