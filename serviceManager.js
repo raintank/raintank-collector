@@ -131,8 +131,8 @@ function serviceUpdate(service) {
         util.format("monitor_id:%d", service.id),
         util.format("collector:%s", config.collector.slug)
       ];
-
-      for (var state=0; state < states.length; state++) {
+      if (service.enabled) {
+        for (var state=0; state < states.length; state++) {
           var metricName = util.format("%s.%s_state", type, states[state]);
           var active = null;
           logger.debug("initializing metric: ", metricName);
@@ -147,6 +147,7 @@ function serviceUpdate(service) {
               time: timestamp,
               tags: tags
           });
+        }
       }
     }
     logger.info("got serviceUpdate message for service: %s", service.id);
@@ -248,7 +249,9 @@ function run(serviceId, mstimestamp) {
                 //console.log(metrics);
                 if (metrics) {
                     metrics.forEach(function(m){
-                        BUFFER.push(m);
+                        if (!(m.value === null || isNaN(m.value))) {
+                            BUFFER.push(m);
+                        }
                     });
                 }
                 var serviceState = 0;
