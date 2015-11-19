@@ -75,7 +75,7 @@ function respond(metrics, service, config, callback) {
             interval: service.frequency,
             unit: "ms",
             target_type: "gauge",
-            value: Math.round(metrics.time * 100) / 100,
+            value: metrics.time,
             time: metrics.startTime,
             tags: tags
         },
@@ -90,7 +90,7 @@ function respond(metrics, service, config, callback) {
             interval: service.frequency,
             unit: "ms",
             target_type: "gauge",
-            value: Math.round(metrics.time * 100) / 100,
+            value: metrics.time,
             time: metrics.startTime,
             tags: tags
         },

@@ -68,9 +68,6 @@ function respond(metrics, service, config, callback) {
     ];
     var payload = [];
     ['min','max','avg','mean', 'mdev'].forEach(function(m) {
-        if (!isNaN(metrics[m]) && metrics[m] > 0 ) {
-            metrics[m] = metrics[m] = Math.round(metrics[m] * 100) / 100;
-        }
         payload.push({
             name: util.format(
                 "litmus.%s.%s.ping.%s",
