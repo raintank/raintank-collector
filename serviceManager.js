@@ -117,6 +117,9 @@ function serviceUpdate(service) {
 
     currentService = serviceCache[service.id];
     if (!currentService) {
+      if (!(service.enabled)) {
+        return;
+      }
       currentService = service;
       //send state metrics to so graphite knows this check exists.
       var states = ["ok", "warn", 'error'];
