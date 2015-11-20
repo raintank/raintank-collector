@@ -155,7 +155,7 @@ function serviceUpdate(service) {
     if (service.updated >= currentService.updated) {
         if (!service.enabled) {
             if (currentService) {
-                _checkDelete(service.id);
+                serviceDelete(service);
             }
             return;
         }
