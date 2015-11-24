@@ -1,0 +1,12 @@
+[Unit]
+Description=The collector for Litmus, from Raintank.
+ 
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/usr/bin/nodejs "/home/vagrant/raintank-collector/app.js" "-c" "/home/vagrant/raintank-collector/etc/config.json"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
