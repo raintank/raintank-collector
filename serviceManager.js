@@ -250,7 +250,7 @@ function run(serviceId, mstimestamp) {
             settings["timeout"] = 10;
         }
 
-        if settings["timeout"] > (service.frequency * 0.8)) {
+        if (settings["timeout"] > (service.frequency * 0.8)) {
             settings["timeout"] = (service.frequency * 0.8);
         }
 
