@@ -243,8 +243,17 @@ function run(serviceId, mstimestamp) {
             settings[setting.variable] = setting.value;
         });
         if (!("timeout" in settings)) {
+            settings["timeout"] = 5;
+        }
+
+        if (settings["timeout"] > 10) {
             settings["timeout"] = 10;
         }
+
+        if settings["timeout"] > (service.frequency * 0.8)) {
+            settings["timeout"] = (service.frequency * 0.8);
+        }
+
         checks[type].execute(settings, service, config, timestamp, function(err, response) {
             if  (response.success) {
                 var events = [];
