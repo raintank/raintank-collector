@@ -7,8 +7,8 @@ The results of each test are then transfered back to the Raintank API where they
 ## To run your own private collector follow these steps.
 
 1. Add the new collector via the raintank portal.
-  * navigate to the collectors page then click on the "New Collector" button at the top right of the screen.
-  * enter a unique name for the collector and click the "add" button.
+  * navigate to the probes page then click on the "New Probe" button at the top right of the screen.
+  * enter a unique name for the probe and click the "add" button.
 2. If you dont already have an apiKey, create a new one.
   * Click on your user name in the left navigation menu, then click the ApiKeys submenu option.
   * Enter the key name and click 'add'
