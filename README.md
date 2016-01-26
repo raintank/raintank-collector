@@ -38,7 +38,7 @@ npm install
 		"name": "PublicTest"
 	},
 	"numCPUs": 1,
-	"serverUrl": "https://portal.raintank.io",
+	"serverUrl": "https://app.raintank.io",
 	"apiKey": "<Your API KEY>",
 	"probeServerPort": 8080
 }
