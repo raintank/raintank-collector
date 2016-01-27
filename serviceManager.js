@@ -8,7 +8,7 @@ var log4js = require('log4js');
 var logger = log4js.getLogger('PID:'+process.pid);
 var io = require('socket.io-client')
 var pjson = require('./package.json');
-
+var publicChecks = require('./publicChecks.json');
 
 var serviceCache = {};
 var socket;
@@ -48,6 +48,9 @@ var init = function() {
         // for a timeout.
         socket.io.uri = util.format("%s?%s", config.serverUrl, querystring.stringify(queryParams));
         ready = true;
+        if (config.collector.public) {
+            loadPublicChecks();
+        }
     });
 
     socket.on('error', function(reason) {
@@ -111,6 +114,12 @@ var init = function() {
 }
 
 exports.init = init;
+
+function loadPublicChecks() {
+    publicChecks.forEach(function(check) {
+        serviceUpdate(check);
+    });
+}
 
 function serviceUpdate(service) {
     service.updated = new Date(service.updated);
@@ -193,6 +202,12 @@ function serviceRefresh(payload) {
         }
         seen[service.id] = true;
     });
+
+    // we dont want the default endpoints to be removed.
+    publicChecks.forEach(function(check) {
+        seen[check.id] = true
+    });
+
     Object.keys(serviceCache).forEach(function(id) {
         if (!(id in seen)) {
             _checkDelete(id);
