@@ -15,7 +15,7 @@ rm -rf ${BUILD_DIR}
 mkdir -p ${BUILD_DIR}
 mkdir -p ${COLLECTOR_BUILD_DIR}
 
-cp -fr *.go *.js package.json checks ${COLLECTOR_BUILD_DIR}/
+cp -fr *.go *.js package.json publicChecks.json checks ${COLLECTOR_BUILD_DIR}/
 cp -fR ${DIR}/config/ubuntu/trusty/* ${BUILD_DIR}/
 
 cd ${COLLECTOR_BUILD_DIR}
