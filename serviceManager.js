@@ -259,6 +259,8 @@ function run(serviceId, mstimestamp) {
         });
         if (!("timeout" in settings)) {
             settings["timeout"] = 5;
+        } else {
+            settings["timoute"] = parseFloat(settings["timeout"])
         }
 
         if (settings["timeout"] > 10) {
