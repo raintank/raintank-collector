@@ -294,14 +294,14 @@ function run(serviceId, mstimestamp) {
                         severity: 'ERROR',
                         message: response.error,
                         timestamp: timestamp * 1000,
-                        tags: [
-                            util.format("endpoint_id:%d", service.endpoint_id),
-                            util.format("endpoint:%s", service.endpoint_slug),
-                            util.format("monitor_id:%d", service.id),
-                            util.format("collector_id:%d", config.collector.id),
-                            util.format("collector:%s", config.collector.slug),
-                            util.format("monitor_type:%s", type)
-                        ]
+                        tags: {
+                            "endpoint_id": ""+service.endpoint_id,
+                            "endpoint": service.endpoint_slug,
+                            "monitor_id": ""+service.id,
+                            "collector_id": ""+config.collector.id,
+                            "collector": config.collector.slug,
+                            "monitor_type": type
+                        }
                     };
                     //console.log(eventPayload);
                     compress(eventPayload, function(err, buffer) {
@@ -324,14 +324,14 @@ function run(serviceId, mstimestamp) {
                         severity: 'OK',
                         message: "Monitor now OK.",
                         timestamp: timestamp * 1000,
-                        tags: [
-                            util.format("endpoint_id:%d", service.endpoint_id),
-                            util.format("endpoint:%s", service.endpoint_slug),
-                            util.format("monitor_id:%d", service.id),
-                            util.format("collector_id:%d", config.collector.id),
-                            util.format("collector:%s", config.collector.slug),
-                            util.format("monitor_type:%s", type)
-                        ]
+                        tags: {
+                            "endpoint_id": ""+service.endpoint_id,
+                            "endpoint": service.endpoint_slug,
+                            "monitor_id": ""+service.id,
+                            "collector_id": ""+config.collector.id,
+                            "collector": config.collector.slug,
+                            "monitor_type": type
+                        }
                     };
                     //console.log(eventPayload);
                     compress(eventPayload, function(err, buffer) {
