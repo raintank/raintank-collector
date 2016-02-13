@@ -26,7 +26,7 @@ docker run \
     -e "name=<COLLECTOR_NAME>" \
     monitoringartist/raintank-collector
   ```
-  ![Dockerized Raintank collector](https://raw.githubusercontent.com/monitoringartist/docker-raintank-collector/master/doc/raintank-collector-monitoring-artist.gif)
+  [![Dockerized Raintank collector](https://raw.githubusercontent.com/monitoringartist/docker-raintank-collector/master/doc/raintank-collector-monitoring-artist.gif)](https://github.com/monitoringartist/docker-raintank-collector)
   Visit https://github.com/monitoringartist/docker-raintank-collector for more information.
 
   b.) Use non containerized version of Raintank collector
