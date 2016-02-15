@@ -3,7 +3,8 @@
 		"name": "Name Goes Here!"
 	},
 	"numCPUs": 1,
-	"serverUrl": "https://portal.raintank.io",
+	"serverUrl": "https://controller.raintank.io",
 	"apiKey": "Secret Key Goes Here!",
-	"pingServerPort": 8080
+	"pingServerPort": 8080,
+    "logLevel": "ERROR"
 }

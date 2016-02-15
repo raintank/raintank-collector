@@ -5,6 +5,7 @@ var util = require('util');
 http.globalAgent.maxSockets = 1000;
 var log4js = require('log4js');
 var logger = log4js.getLogger('PID:'+process.pid);
+logger.setLevel(config.logLevel);
 
 exports.execute = function(payload, service, config, timestamp, callback) {
     var profile = {
