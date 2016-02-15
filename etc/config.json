@@ -5,6 +5,6 @@
 	"numCPUs": 1,
 	"serverUrl": "https://controller.raintank.io",
 	"apiKey": "Secret Key Goes Here!",
-	"pingServerPort": 8080,
+	"probeServerPort": 8080,
     "logLevel": "ERROR"
 }
