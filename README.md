@@ -20,10 +20,9 @@ The results of each test are then transfered back to the Raintank API where they
   ```
 docker run \
     -d \
-    --name raintank-collector \
     -p 8284:8284 \
-    -e "apiKey=<RAINTANK_API_KEY>" \
-    -e "name=<COLLECTOR_NAME>" \
+    -e "RAINTANK_apiKey=<RAINTANK_API_KEY>" \
+    -e "RAINTANK_collector_name=<COLLECTOR_NAME>" \
     monitoringartist/raintank-collector
   ```
   [![Dockerized Raintank collector](https://raw.githubusercontent.com/monitoringartist/docker-raintank-collector/master/doc/raintank-collector-monitoring-artist.gif)](https://github.com/monitoringartist/docker-raintank-collector)
