@@ -16,7 +16,7 @@ The results of each test are then transfered back to the Raintank API where they
 3. Install the collector application - 2 options
 
   a.) Use dockerized version of Raintank collector
-  * Minimal ~30sec deployment:
+  * Minimal ~10sec deployment:
   ```
 docker run \
     -d \
