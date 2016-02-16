@@ -6,5 +6,5 @@
 	"serverUrl": "https://controller.raintank.io",
 	"apiKey": "Secret Key Goes Here!",
 	"probeServerPort": 8080,
-    "logLevel": "ERROR"
+	"logLevel": "ERROR"
 }
