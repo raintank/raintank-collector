@@ -6,7 +6,6 @@ var zlib = require('zlib');
 var querystring = require("querystring");
 var log4js = require('log4js');
 var logger = log4js.getLogger('PID:'+process.pid);
-logger.setLevel(config.logLevel);
 var io = require('socket.io-client')
 var pjson = require('./package.json');
 var publicChecks = require('./publicChecks.json');
