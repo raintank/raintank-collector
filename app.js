@@ -4,6 +4,7 @@ var cluster = require('cluster');
 var serviceManager = require('./serviceManager');
 var log4js = require('log4js');
 var logger = log4js.getLogger('PID:'+process.pid);
+logger.setLevel(config.logLevel);
 log4js.replaceConsole();
 var spawn = require('child_process').spawn;
 
