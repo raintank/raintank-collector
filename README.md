@@ -13,7 +13,22 @@ The results of each test are then transfered back to the Raintank API where they
   * Click on your user name in the left navigation menu, then click the ApiKeys submenu option.
   * Enter the key name and click 'add'
   * be sure to note down the key generated as you will need it for the collector configuration file.
-3. Install the collector application
+3. Install the collector application - 2 options
+
+  a.) Use dockerized version of Raintank collector
+  * Minimal ~10sec deployment:
+  ```
+docker run \
+    -d \
+    -p 8284:8284 \
+    -e "RAINTANK_apiKey=<RAINTANK_API_KEY>" \
+    -e "RAINTANK_collector_name=<COLLECTOR_NAME>" \
+    monitoringartist/raintank-collector
+  ```
+  [![Dockerized Raintank collector](https://raw.githubusercontent.com/monitoringartist/docker-raintank-collector/master/doc/raintank-collector-monitoring-artist.gif)](https://github.com/monitoringartist/docker-raintank-collector)
+  Visit https://github.com/monitoringartist/docker-raintank-collector for more information.
+
+  b.) Use non containerized version of Raintank collector
   * Clone the repository
   ```
 git clone https://github.com/raintank/raintank-collector.git
