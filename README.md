@@ -15,7 +15,33 @@ The results of each test are then transfered back to the Raintank API where they
   * be sure to note down the key generated as you will need it for the collector configuration file.
 3. Install the collector application - 2 options
 
-  a.) Use dockerized version of Raintank collector
+  a.) Use Ubuntu Pacakge. (Always the latest version)
+  * add PackageCloud to repo.
+  ```
+  curl -s https://packagecloud.io/install/repositories/raintank/raintank/script.deb.sh | sudo bash
+  ```
+  * Install raintank-collector pacakge
+  ```
+  apt-get install node-raintank-collector
+  ```
+  * Create the configuration file in /etc/raintank/collector/config.json using the apiKey from step2
+  ```
+{
+  "collector": {
+    "name": "<COLLECTOR_NAME>"
+  },
+  "numCPUs": 1,
+  "serverUrl": "https://controller.raintank.io",
+  "apiKey": "<RAINTANK_API_KEY>",
+  "probeServerPort": 8080
+}
+```
+  * start the collector
+  ```
+  service raintank-collector start
+  ```
+
+  b.) Use dockerized version of Raintank collector (Provided by Community)
   * Minimal ~10sec deployment:
   ```
 docker run \
@@ -28,7 +54,7 @@ docker run \
   [![Dockerized Raintank collector](https://raw.githubusercontent.com/monitoringartist/docker-raintank-collector/master/doc/raintank-collector-monitoring-artist.gif)](https://github.com/monitoringartist/docker-raintank-collector)
   Visit https://github.com/monitoringartist/docker-raintank-collector for more information.
 
-  b.) Use non containerized version of Raintank collector
+  c.) Manual build of Raintank collector (Great for those wishing to test and contribute)
   * Clone the repository
   ```
 git clone https://github.com/raintank/raintank-collector.git
