@@ -22,6 +22,7 @@ git clone https://github.com/raintank/raintank-collector.git
   * Install `raintank_probe`, which has taken over some of raintank_collector's functionality.
   ```
 go get github.com/raintank/raintank-probe
+go build github.com/raintank/raintank-probe
   ```
   * Copy `raintank-probe` to `raintank-collector`'s directory.
   ```
