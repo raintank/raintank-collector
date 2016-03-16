@@ -26,7 +26,7 @@ exports.execute = function(payload, service, config, timestamp, callback) {
         port: config.probeServerPort,
         path:  '/https',
         method: 'POST',
-        headers: {'Content-Type': "application/json", 'Content-Length': post_body.length}
+        headers: {'Content-Type': "application/json", 'Content-Length': Buffer.byteLength(post_body, 'utf8')}
     }, function(response) {
         var body = '';
         response.on('data', function(d) {
