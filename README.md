@@ -13,14 +13,14 @@ The results of each test are then transfered back to the Raintank API where they
   * Click on your user name in the left navigation menu, then click the ApiKeys submenu option.
   * Enter the key name and click 'add'
   * be sure to note down the key generated as you will need it for the collector configuration file.
-3. Install the collector application - 2 options
+3. Install the collector application - 3 options
 
-  a.) Use Ubuntu Pacakge. (Always the latest version)
+  a.) Use Ubuntu Package. (Always the latest version)
   * add PackageCloud to repo.
   ```
   curl -s https://packagecloud.io/install/repositories/raintank/raintank/script.deb.sh | sudo bash
   ```
-  * Install raintank-collector pacakge
+  * Install raintank-collector package
   ```
   apt-get install node-raintank-collector
   ```
