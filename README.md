@@ -9,10 +9,7 @@ The results of each test are then transfered back to the Raintank API where they
 1. Add the new collector via the raintank portal.
   * navigate to the probes page then click on the "New Probe" button at the top right of the screen.
   * enter a unique name for the probe and click the "add" button.
-2. If you dont already have an apiKey, create a new one.
-  * Click on your user name in the left navigation menu, then click the ApiKeys submenu option.
-  * Enter the key name and click 'add'
-  * be sure to note down the key generated as you will need it for the collector configuration file.
+2. If you dont already have a Grafana.Net apiKey, [create one](https://grafana.net/profile).
 3. Install the collector application - 3 options
 
   a.) Use Ubuntu Package. (Always the latest version)
