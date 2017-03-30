@@ -6,9 +6,9 @@ The results of each test are then transfered back to the Raintank API where they
 
 ## To run your own private collector follow these steps.
 
-1. Add the new collector via the raintank portal.
-  * navigate to the probes page then click on the "New Probe" button at the top right of the screen.
-  * enter a unique name for the probe and click the "add" button.
+1. Add the new collector via the worldPing within your Grafana.
+  * Navigate to the probes page by accessing the Grafana Main Menu -> worldPing -> Probes. Click on the "New Probe" button at the top right of the screen. *If you do not see worldPing listed in the main menu, the app likely still needs to be enabled.* 
+  * Enter a unique name for the probe and click the "add" button.
 2. If you dont already have a Grafana.Net apiKey, [create one](https://grafana.net/profile).
 3. Install the collector application - 3 options
 
